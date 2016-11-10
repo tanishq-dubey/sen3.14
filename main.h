@@ -9,6 +9,7 @@
 #include "game.h"
 #include "memory.h"
 #include "ppu.h"
+#include "cpu.h"
 
 #define debug 1
 

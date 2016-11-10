@@ -1,31 +1,32 @@
 #include "cpu.h"
 
 void init_cpu() {
-    A = 0;
-    X = 0;
-    Y = 0;
+    cpu.A = 0;
+    cpu.X = 0;
+    cpu.Y = 0;
     // http://forum.6502.org/viewtopic.php?t=1708
-    PC = 0xFFFC;
-    S = 0xFD;
-    MEMORY = (char*)malloc(sizeof(char)*0x10000);
-    int i;
-    for (i = 0; i <= 0x2000; i++) {
-        MEMORY[i] = 0xFF;
+    cpu.PC = 0;
+    cpu.PC = (read(0xFFFC) << 8) | read(0xFFFD);
+    cpu.S = 0xFF;
+    cpu.carry = 0;
+    cpu.zero = 0;
+    cpu.interrupt = 0;
+    cpu.decimal = 0;
+    cpu.overflow = 0;
+    cpu.negative = 0;
+    if (debug) {
+        printf("\nRegisters:\n");
+        printf("A:  0x%02X\n", cpu.A);
+        printf("X:  0x%02X\n", cpu.X);
+        printf("Y:  0x%02X\n", cpu.Y);
+        printf("PC: 0x%02X\n", cpu.PC);
+        printf("S:  0x%02X\n", cpu.S);
     }
-    for (i = 0x2000; i <= 0x8000; i++) {
-        MEMORY[i] = 0;
-    }
-    carry = 0;
-    zero = 0;
-    interrupt = 0;
-    decimal = 0;
-    overflow = 0;
-    negative = 0;
 }
 
 void reset_cpu() {
-    S = S -3;
-    interrupt = 1;
+    cpu.S = cpu.S -3;
+    cpu.interrupt = 1;
 }
 
 

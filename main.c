@@ -34,6 +34,7 @@ int main (int argc, char** argv) {
     init_game(ROM);
     init_memory();
     init_ppu();
+    init_cpu();
 
    free(ROM);
 }
