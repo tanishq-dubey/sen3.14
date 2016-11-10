@@ -1,17 +1,22 @@
 #ifndef PPU_H
 #define PPU_H
 
-unsigned char PPUCTRL;
-unsigned char PPUMASK;
-unsigned char PPUSTATUS;
-unsigned char OAMADDR;
-unsigned char OAMDATA;
-unsigned short PPUSCROLL;
-unsigned short PPUADDR;
-unsigned char PPUDATA;
+#include "cpu.h"
 
-//power up state found at https://wiki.nesdev.com/w/index.php/PPU_power_up_state#Best_practice
+char * PPU_MEMORY;
 void init_ppu();
 void reset_ppu();
 
+typedef struct ppu {
+	uint8_t PPUCTRL;
+	uint8_t PPUMASK;
+	uint8_t PPUSTATUS;
+	uint8_t OAMADDR;
+	uint8_t OAMDATA;
+	uint16_t PPUSCROLL;
+	uint16_t PPUADDR;
+	uint8_t PPUDATA;
+}ppu;
+
+static struct ppu ppupack;
 #endif
