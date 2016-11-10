@@ -11,7 +11,7 @@ void init_memory() {
     memcpy(&memory.memory_location[0x8000], rom_file+0x3800, 16384);
     memcpy(&memory.memory_location[0xC000], rom_file+0x3C00, 16384);
     if (debug) {
-        printf("RAM instantiation results:\n");
+        printf("\nRAM instantiation results:\n");
         int i;
         printf("0x8000: ");
         for(i = 0; i < 4; i++) {
@@ -47,13 +47,24 @@ void init_memory() {
         }
 
         printf("\nPC Initial value: 0x%02X%02X", memory.memory_location[0xFFFC], memory.memory_location[0xFFFD]);
+
     }
+
+    memory.ppu_register_six_write  = 0;
+    memory.ppu_register_five_write = 0;
 }
 
-static uint8_t read(uint16_t address) {
-    if (address == 0x2002) {
-        // TODO: Return PPU Status
-        return 0x80;
-    }
+uint8_t read(uint16_t address) {
     return memory.memory_location[address];
+}
+
+uint16_t read_short(uint16_t address) {
+    return (uint16_t)((read(address) << 8) | read(address));
+}
+
+void write(uint16_t address, uint8_t value) {
+    if (address >= 0x2000 && address <= 0x2007) {
+        ppu_write(address, value);
+    }
+    memory.memory_location[address] = value;
 }

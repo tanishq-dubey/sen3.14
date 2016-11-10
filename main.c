@@ -1,6 +1,4 @@
 #include "main.h"
-#include "game.h"
-#include "memory.h"
 
 int main (int argc, char** argv) {
     // Input validation
@@ -35,6 +33,7 @@ int main (int argc, char** argv) {
 
     init_game(ROM);
     init_memory();
+    init_ppu();
 
    free(ROM);
 }

@@ -11,8 +11,8 @@ void init_game(uint8_t* rom) {
     gamepack.prg_rom_size = rom[4];
     gamepack.chr_rom_size = rom[5];
     gamepack.flags_six     = rom[6];
-    gamepack.flags_seven   = rom[8];
-    gamepack.mapper_mode = (gamepack.flags_seven & 0xF) |  ((gamepack.flags_six & 0xF0) >> 4);
+    gamepack.flags_seven   = rom[7];
+    gamepack.mapper_mode = (gamepack.flags_seven & 0xF0) |  ((gamepack.flags_six & 0xF0) >> 4);
     gamepack.rom_data = rom;
     if (debug) {
         printf("PRG ROM Size: 0x%02X\n", gamepack.prg_rom_size);

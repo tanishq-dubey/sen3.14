@@ -4,7 +4,7 @@ CFLAGS = -Wall -g
 LIBS = 
 
 
-SRCS = main.c game.c cpu.c memory.c
+SRCS = main.c game.c cpu.c memory.c ppu.c
 OBJS = $(SRCS:.c=.o)
 
 MAIN = nes

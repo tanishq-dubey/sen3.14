@@ -4,6 +4,10 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include "game.h"
+#include "memory.h"
+#include "ppu.h"
+
 #define debug 1
 
 int main();
