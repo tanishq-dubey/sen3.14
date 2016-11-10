@@ -1,5 +1,6 @@
 #include "main.h"
 #include "game.h"
+#include "memory.h"
 
 int main (int argc, char** argv) {
     // Input validation
@@ -19,7 +20,7 @@ int main (int argc, char** argv) {
     fseek(fp, 0, SEEK_END);
     long fsize = ftell(fp);
     rewind(fp);
-    unsigned char *ROM = (unsigned char *)malloc(fsize +1);
+    uint8_t *ROM = (uint8_t *)malloc(fsize +1);
     fread(ROM, fsize, 1, fp);
     fclose(fp);
     
@@ -33,6 +34,7 @@ int main (int argc, char** argv) {
 
 
     init_game(ROM);
+    init_memory();
 
    free(ROM);
 }

@@ -4,6 +4,7 @@ void init_cpu() {
     A = 0;
     X = 0;
     Y = 0;
+    // http://forum.6502.org/viewtopic.php?t=1708
     PC = 0xFFFC;
     S = 0xFD;
     MEMORY = (char*)malloc(sizeof(char)*0x10000);

@@ -1,9 +1,9 @@
 #include "game.h"
 
-void init_game(unsigned char* rom) {
+void init_game(uint8_t* rom) {
     // ROM Validation:
     if( rom[0] != 'N' && rom[1] != 'E' && rom[2] != 'S' && rom[3] != '\32') {
-        printf("Invalid ROM file, header does not match (%s, %s::%d)\n", __FILE__, __func__, __LINE__);
+        printf("Invalid ROM file, header does not match (%s, %s::%d)\n ", __FILE__, __func__, __LINE__);
         free(rom);
         exit(0);
     }
@@ -23,6 +23,6 @@ void init_game(unsigned char* rom) {
     }
 }
 
-unsigned char* get_rom_file() {
+uint8_t* get_rom_file() {
     return gamepack.rom_data;
 }

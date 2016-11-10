@@ -1,12 +1,28 @@
-HEADERS = cpu.h
+CC = gcc
+CFLAGS = -Wall -g
 
-default: nes
+LIBS = 
 
-nes: main.o
-	gcc -o nes main.o
 
-main.o: main.c
-	gcc -c main.c
+SRCS = main.c game.c cpu.c memory.c
+OBJS = $(SRCS:.c=.o)
+
+MAIN = nes
+
+.PHONY: depend clean
+
+all:    $(MAIN)
+
+$(MAIN): $(OBJS) 
+	$(CC) $(CFLAGS) -o $(MAIN) $(OBJS) $(LIBS)
+
+.c.o:
+	$(CC) $(CFLAGS) $(INCLUDES) -c $<  -o $@
 
 clean:
-	rm nes *.o
+	$(RM) *.o *~ $(MAIN)
+
+depend: $(SRCS)
+	makedepend $(INCLUDES) $^
+
+# DO NOT DELETE THIS LINE -- make depend needs it
