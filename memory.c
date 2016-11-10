@@ -45,5 +45,15 @@ void init_memory() {
         for(i = 12; i < 16; i++) {
             printf("0x%02x ", memory.memory_location[0xC00C+i]);
         }
+
+        printf("\nPC Initial value: 0x%02X%02X", memory.memory_location[0xFFFC], memory.memory_location[0xFFFD]);
     }
+}
+
+static uint8_t read(uint16_t address) {
+    if (address == 0x2002) {
+        // TODO: Return PPU Status
+        return 0x80;
+    }
+    return memory.memory_location[address];
 }
