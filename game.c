@@ -3,7 +3,7 @@
 void init_game(uint8_t* rom) {
     // ROM Validation:
     if( rom[0] != 'N' && rom[1] != 'E' && rom[2] != 'S' && rom[3] != '\32') {
-        printf("Invalid ROM file, header does not match (%s, %s::%d)\n ", __FILE__, __func__, __LINE__);
+        debug_print("%s","Invalid ROM file, header does not match");
         free(rom);
         exit(0);
     }
@@ -14,13 +14,16 @@ void init_game(uint8_t* rom) {
     gamepack.flags_seven   = rom[7];
     gamepack.mapper_mode = (gamepack.flags_seven & 0xF0) |  ((gamepack.flags_six & 0xF0) >> 4);
     gamepack.rom_data = rom;
-    if (debug) {
-        printf("PRG ROM Size: 0x%02X\n", gamepack.prg_rom_size);
-        printf("CHR ROM Size: 0x%02X\n", gamepack.chr_rom_size);
-        printf("Flag 6:       0x%02X\n", gamepack.flags_six);
-        printf("Flag 7:       0x%02X\n", gamepack.flags_seven);
-        printf("Mapper Mode:  0x%02X\n", gamepack.mapper_mode);
+    int i;
+    debug_print("%s", "\033[32;1mGame init info\033[0m\n");
+    for(i = 0; i < 8; i++){
+        debug_print("0x%02X \n", gamepack.rom_data[i]);
     }
+    debug_print("PRG ROM Size: 0x%02X\n", gamepack.prg_rom_size);
+    debug_print("CHR ROM Size: 0x%02X\n", gamepack.chr_rom_size);
+    debug_print("Flag 6:       0x%02X\n", gamepack.flags_six);
+    debug_print("Flag 7:       0x%02X\n", gamepack.flags_seven);
+    debug_print("Mapper Mode:  0x%02X\n", gamepack.mapper_mode);
 }
 
 uint8_t* get_rom_file() {

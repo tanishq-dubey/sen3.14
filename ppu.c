@@ -21,10 +21,10 @@ void init_ppu()
 
     ppupack.PPU_MEMORY = (char*)malloc(sizeof(char)*0x10000);
     if(debug) {
-        printf("\n\nPPU Register Data:\n");
+        debug_print("%s","\033[32;1mPPU Register Data:\033[0m\n");
         int i;
         for(i = 0; i < 8; i++) {
-            printf("0x200%d: 0x%02x\n", i, read(0x2000+i));
+            debug_print("0x200%d: 0x%02x\n", i, read(0x2000+i));
         }
     }
 } 

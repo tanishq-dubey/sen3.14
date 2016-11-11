@@ -2,16 +2,9 @@
 
 int main (int argc, char** argv) {
     // Input validation
-    if (argc == 1 || argc > 3) {
-        printf("Invalid number of arguments! (%s, %s::%d)\n", __FILE__, __func__, __LINE__);
+    if (argc == 1 || argc > 2) {
+        debug_print("%s", "Invalid number of arguments!");
         return 0;
-    }
-    if (argc == 3) {
-        if (strcmp(argv[2], "-v") == 0) {
-            //debug = 1; 
-        } else {
-            printf("Invalid arguments! (%s, %s::%d)\n", __FILE__, __func__, __LINE__);
-        }
     }
     FILE* fp = fopen(argv[1], "rb");
     // Load ROM into dynamic memory:
@@ -21,15 +14,6 @@ int main (int argc, char** argv) {
     uint8_t *ROM = (uint8_t *)malloc(fsize +1);
     fread(ROM, fsize, 1, fp);
     fclose(fp);
-    
-    int i;
-    if (debug) {
-        for(i = 0; i < 8; i++){
-            printf("0x%02X ", ROM[i]);
-        }
-        printf("\n");
-    }
-
 
     init_game(ROM);
     init_memory();
