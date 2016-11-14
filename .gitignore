@@ -5,6 +5,7 @@
 *.obj
 *.swp
 nes
+*.DS_Store
 
 # Precompiled Headers
 *.gch

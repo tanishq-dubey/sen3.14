@@ -10,6 +10,7 @@
 #include "memory.h"
 #include "ppu.h"
 #include "cpu.h"
+#include "mmc.h"
 
 #define debug 1
 
