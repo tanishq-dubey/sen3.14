@@ -25,14 +25,14 @@ void init_ppu()
 	if(debug)
 	{
 		debug_print("%s","\033[32;1mPPU Register Data:\033[0m\n");
-        debug_print("0x2000: 0x%02x\n", i, PPUCTRL);
-        debug_print("0x2001: 0x%02x\n", i, PPUMASK);
-        debug_print("0x2002: 0x%02x\n", i, PPUSTATUS);
-        debug_print("0x2003: 0x%02x\n", i, OAMADDR);
-        debug_print("0x2004: 0x%02x\n", i, OAMDATA);
-        debug_print("0x2005: 0x%02x\n", i, PPUSCROLL);
-        debug_print("0x2006: 0x%02x\n", i, PPUADDR);
-        debug_print("0x2007: 0x%02x\n", i, PPUDATA);
+        debug_print("0x2000: 0x%02x\n", PPUCTRL);
+        debug_print("0x2001: 0x%02x\n", PPUMASK);
+        debug_print("0x2002: 0x%02x\n", PPUSTATUS);
+        debug_print("0x2003: 0x%02x\n", OAMADDR);
+        debug_print("0x2004: 0x%02x\n", OAMDATA);
+        debug_print("0x2005: 0x%02x\n", PPUSCROLL);
+        debug_print("0x2006: 0x%02x\n", PPUADDR);
+        debug_print("0x2007: 0x%02x\n", PPUDATA);
 	}
 } 
 

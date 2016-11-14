@@ -2,6 +2,9 @@
 #define PPU_H
 
 #include "cpu.h"
+#include "memory.h"
+#include "main.h"
+#include <stdbool.h>
 
 uint8_t * PPU_VRAM_MEMORY;
 uint8_t * PPU_OAM_MEMORY;
