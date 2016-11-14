@@ -26,6 +26,7 @@ bool addr_write;
 
 void init_ppu();
 void reset_ppu();
+void ppu_write(uint16_t address, uint8_t value);
 
 //getting all the read write info on https://wiki.nesdev.com/w/index.php/PPU_registers#OAMADDR
 

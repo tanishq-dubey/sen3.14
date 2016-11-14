@@ -36,6 +36,31 @@ void init_ppu()
 	}
 } 
 
+void ppu_write(uint16_t address, uint8_t value)
+{
+	if(address == 0x2000) {
+		write_CTRL(value);
+	}
+	else if(address == 0x2001) {
+		write_MASK(value);
+	}
+	else if (address == 0x2003) {
+        write_OAMADDR(value);
+    } 
+    else if (address == 0x2004) {
+        write_OAMDATA(value);
+    } 
+    else if (address == 0x2005) {         
+    	write_SCROLL(value);
+    } 
+    else if (address == 0x2006) {
+        write_VRAMADDR(value);
+    } 
+    else if (address == 0x2007) {
+        write_VRAMDATA(value);
+    }
+}
+
 void reset_ppu()
 {
 	PPUCTRL = 0;
