@@ -26,6 +26,7 @@ static struct memory_t memory;
 
 void init_memory();
 uint8_t read(uint16_t address);
+uint16_t read_short(uint16_t address);
 void write(uint16_t address, uint8_t value);
 prg_rom_page get_prg_page(int page);
 chr_rom_page get_chr_page(int page);
