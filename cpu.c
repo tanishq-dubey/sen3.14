@@ -343,10 +343,28 @@ void bpl(tick_data_t* step) {
     }
 }
 
+void sbc(tick_data_t* step) {
+    uint8_t a = cpu.A;
+    uint8_t b = read(step->address);
+    uint8_t c = cpu.carry;
+    cpu.A = a - b - (1- c);
+    set_zn_flags(cpu.A);
+    if ((int)a - (int) b - (int)(1 - c) >= 0) {
+        cpu.carry = 1;
+    } else {
+        cpu.carry = 0;
+    }
+    if ((((a^b) & 0x80) != 0) && (((a ^ cpu.A) & 0x80) != 0)) {
+        cpu.overflow = 1;
+    } else {
+        cpu.overflow = 0;
+    }
+}
+
 void brk(tick_data_t* step) {
     push_short(cpu.PC);
     push(generate_flags() | 0x10);
-    // sbc
+    sbc(step);
     cpu.PC = read_short(0xFFFE);
 }
 
@@ -537,22 +555,58 @@ void rts(tick_data_t* step) {
 }
 
 
+void sec(tick_data_t* step) {
+    cpu.carry = 1;
+}
 
+void sed(tick_data_t* step) {
+    cpu.decimal = 1;
+}
 
+void sei(tick_data_t* step) {
+    cpu.interrupt = 1;
+}
 
+void sta(tick_data_t* step) {
+    write(step->address, cpu.A);
+}
 
+void stx(tick_data_t* step) {
+    write(step->address, cpu.X);
+}
 
+void sty(tick_data_t* step) {
+    write(step->address, cpu.Y);
+}
 
+void tax(tick_data_t* step) {
+    cpu.X = cpu.A;
+    set_zn_flags(cpu.X);
+}
 
+void tay(tick_data_t* step) {
+    cpu.Y = cpu.A;
+    set_zn_flags(cpu.Y);
+}
 
+void tsx(tick_data_t* step) {
+    cpu.X = cpu.S;
+    set_zn_flags(cpu.X);
+}
 
+void txa(tick_data_t* step) {
+    cpu.A = cpu.X;
+    set_zn_flags(cpu.A);
+}
 
+void txs(tick_data_t* step) {
+    cpu.S = cpu.X;
+}
 
-
-
-
-
-
+void tya(tick_data_t* step) {
+    cpu.A = cpu.Y;
+    set_zn_flags(cpu.A);
+}
 
 int tick() {
     unsigned long cycles = cpu.cycles;
