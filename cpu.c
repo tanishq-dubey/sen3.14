@@ -155,6 +155,12 @@ uint8_t pop() {
     return read(0x100 | (uint16_t)(cpu.S));
 }
 
+uint16_t pop_short() {
+    uint16_t low = (uint16_t)pop();
+    uint16_t high = (uint16_t)pop();
+    return high << 8 | low;
+}
+
 uint8_t generate_flags() {
     uint8_t flags = 0;
     flags |= cpu.carry << 0;
@@ -389,6 +395,12 @@ void cmy(tick_data_t* step) {
     compare_set_flags(cpu.Y, value);
 }
 
+void dec(tick_data_t* step) {
+    uint8_t value = read(step->address) - 1;
+    write(step->address, value);
+    set_zn_flags(value);
+}
+
 void dex(tick_data_t* step) {
     cpu.X--;
     set_zn_flags(cpu.X);
@@ -398,6 +410,134 @@ void dey(tick_data_t* step) {
     cpu.Y--;
     set_zn_flags(cpu.Y);
 }
+
+void eor(tick_data_t* step) {
+    cpu.A = cpu.A ^ read(step->address);
+    set_zn_flags(cpu.A);
+}
+
+void inc(tick_data_t* step) {
+    uint8_t value = read(step->address) + 1;
+    write(step->address, value);
+    set_zn_flags(value);
+}
+
+void inx(tick_data_t* step) {
+    cpu.X++;
+    set_zn_flags(cpu.X);
+}
+
+void iny(tick_data_t* step) {
+    cpu.Y++;
+    set_zn_flags(cpu.Y);
+}
+
+void jmp(tick_data_t* step) {
+    cpu.PC = step->address;
+}
+
+void jsr(tick_data_t* step) {
+    push_short(cpu.PC - 1);
+    cpu.PC = step->address;
+}
+
+void lda(tick_data_t* step) {
+    cpu.A = read(step->address);
+    set_zn_flags(cpu.A);
+}
+
+void ldx(tick_data_t* step) {
+    cpu.X = read(step->address);
+    set_zn_flags(cpu.X);
+}
+
+void ldy(tick_data_t* step) {
+    cpu.Y = read(step->address);
+    set_zn_flags(cpu.Y);
+}
+
+void lsr(tick_data_t* step) {
+    if (step->mode == modeAccumulator) {
+        cpu.carry = cpu.A & 1;
+        cpu.A >>= 1;
+        set_zn_flags(cpu.A);
+    } else {
+        uint8_t value = read(step->address);
+        cpu.carry = value & 1;
+        value >>= 1;
+        write(step->address, value);
+        set_zn_flags(value);
+    }
+}
+
+void nop(tick_data_t* step) {
+}
+
+void ora(tick_data_t* step) {
+    cpu.A = cpu.A | read(step->address);
+    set_zn_flags(cpu.A);
+}
+
+void pha(tick_data_t* step) {
+    push(cpu.A);
+}
+
+void php(tick_data_t* step) {
+    push(generate_flags() | 0x10);
+}
+
+void pla(tick_data_t* step) {
+    cpu.A = pop();
+    set_zn_flags(cpu.A);
+}
+
+void plp(tick_data_t* step) {
+    set_flags( (pop() & 0xEF) | 0x20);
+}
+
+void rol(tick_data_t* step) {
+    if(step->mode == modeAccumulator) {
+        uint8_t c = cpu.carry;
+        cpu.carry = (cpu.A >> 7) & 1;
+        cpu.A = (cpu.A << 1) | c;
+        set_zn_flags(cpu.A);
+    } else {
+        uint8_t c = cpu.carry;
+        uint8_t value = read(step->address);
+        cpu.carry = (value >> 7) & 1;
+        value = (value << 1) | c;
+        write(step->address, value);
+        set_zn_flags(value);
+    }
+}
+
+void ror(tick_data_t* step) {
+    if(step->mode == modeAccumulator) {
+        uint8_t c = cpu.carry;
+        cpu.carry = cpu.A & 1;
+        cpu.A = (cpu.A >> 1) | (c << 7);
+        set_zn_flags(cpu.A);
+    } else {
+        uint8_t c = cpu.carry;
+        uint8_t value = read(step->address);
+        cpu.carry = value & 1;
+        value = (value >> 1) | (c << 7);
+        write(step->address, value);
+        set_zn_flags(value);
+    }
+}
+
+void rti(tick_data_t* step) {
+    set_flags((pop() & 0xEF) | 0x20);
+    cpu.PC = pop_short();
+}
+
+void rts(tick_data_t* step) {
+    cpu.PC = pop_short();
+}
+
+
+
 
 
 
