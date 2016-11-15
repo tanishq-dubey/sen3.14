@@ -67,6 +67,6 @@ enum {
 static struct cpu_t cpu;
 void init_cpu();
 void reset_cpu();
-void tick();
+int tick();
 
 #endif

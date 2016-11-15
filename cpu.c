@@ -145,6 +145,11 @@ void push(uint8_t value) {
     cpu.S--;
 }
 
+void push_short(uint16_t value) {
+    push((uint8_t)(value >> 8));
+    push((uint8_t)(value & 0xFF));
+}
+
 uint8_t pop() {
     cpu.S++;
     return read(0x100 | (uint16_t)(cpu.S));
@@ -225,7 +230,100 @@ void set_irq() {
     cpu.interrupt = irq_interrupt;
 }
 
+void do_nmi() {
+    push_short(cpu.PC);
+    push(generate_flags() | 0x10);
+    cpu.PC = read_short(0xFFFA);
+    cpu.interrupt = 1;
+    cpu.cycles += 7;
+}
 
-void tick() {
+void do_irq() {
+    push_short(cpu.PC);
+    push(generate_flags() | 0x10);
+    cpu.PC = read_short(0xFFFE);
+    cpu.interrupt = 1;
+    cpu.cycles += 7;
+}
 
+int tick() {
+    unsigned long cycles = cpu.cycles;
+    switch(cpu.interrupt){
+        case nmi_interrupt:
+            do_nmi();
+            break;
+        case irq_interrupt:
+            do_irq();
+            break;
+    }
+    cpu.interrupt = none_interrupt;
+    uint8_t opcode = read(cpu.PC);
+    uint8_t mode = instruction_modes[opcode];
+
+    uint16_t address;
+    uint8_t page_cross = 0;
+    uint16_t offset;    
+    switch(mode) {
+        case modeAbsolute:
+            address = read_short(cpu.PC + 1);
+            break;
+        case modeAbsoluteX:
+            address = read_short(cpu.PC + 1) + (uint16_t)cpu.X;
+            page_cross = page_crossed(address - (uint16_t)cpu.X, address);
+            break;
+        case modeAbsoluteY:
+            address = read_short(cpu.PC + 1) + (uint16_t)cpu.Y;
+            page_cross = page_crossed(address - (uint16_t)cpu.Y, address);
+            break;
+        case modeAccumulator:
+            address = 0;
+            break;
+        case modeImmediate:
+            address = cpu.PC + 1;
+            break;
+        case modeImplied:
+            address = 0;
+            break;
+        case modeIndexedIndirect:
+            address = read_short_bad((uint16_t)(read(cpu.PC + 1) + cpu.X));
+            break;
+        case modeIndirect:
+            address = read_short_bad(read_short(cpu.PC + 1));
+            break;
+        case modeIndirectIndexed:
+            address = read_short_bad((uint16_t)(read(cpu.PC + 1)) + (uint16_t)(cpu.Y));
+            page_cross = page_crossed(address - (uint16_t)(cpu.Y), address);
+            break;
+        case modeRelative:
+            offset = (uint16_t)(read(cpu.PC + 1));
+            if (offset < 0x80) {
+                address = cpu.PC + 2 + offset;
+            } else {
+                address = cpu.PC + 2 + offset - 0x100;
+            }
+            break;
+        case modeZeroPage:
+            address = (uint16_t)(read(cpu.PC + 1));
+            break;
+        case modeZeroPageX:
+            address = (uint16_t)(read(cpu.PC + 1) + cpu.X);
+            break;
+        case modeZeroPageY:
+            address = (uint16_t)(read(cpu.PC + 1) + cpu.Y);
+            break;
+    }
+
+    cpu.PC += (uint16_t)(instruction_sizes[opcode]);
+    cpu.cycles += (unsigned long)(instruction_cycles[opcode]);
+    if (page_cross) {
+        cpu.cycles += (unsigned long)(instruction_page_cycles[opcode]);
+    }
+    
+    tick_data_t* step_data = (tick_data_t*)malloc(sizeof(tick_data_t));
+    step_data->pc = cpu.PC;
+    step_data->address = address;
+    step_data->mode = mode;
+    // Call function pointer
+    free(step_data);
+    return cpu.cycles - cycles;
 }

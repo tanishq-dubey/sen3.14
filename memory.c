@@ -77,6 +77,14 @@ uint16_t read_short(uint16_t address) {
     return (uint16_t)((read(address) << 8) | read(address));
 }
 
+uint16_t read_short_bad(uint16_t address) {
+    uint16_t a = address;
+    uint16_t b = (a & 0xFF00) | (uint16_t)((uint8_t)(a+1));
+    uint8_t low = read(a);
+    uint8_t high = read(b);
+    return (uint16_t)(high << 8) | (uint16_t)low;
+}
+
 void write(uint16_t address, uint8_t value) {
     if(address >= 0x8000 && address <= 0xFFFF) {
         mmc_write(address, value);
