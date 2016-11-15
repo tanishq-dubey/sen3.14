@@ -246,6 +246,174 @@ void do_irq() {
     cpu.cycles += 7;
 }
 
+// Add with carry
+void adc(tick_data_t* step) {
+    uint8_t a = cpu.A;
+    uint8_t b = read(step->address);
+    uint8_t c = cpu.carry;
+    cpu.A = a + b + c;
+    set_zn_flags(cpu.A);
+    if((int)(a) + (int)(b) + (int)(c) > 0xFF) {
+        cpu.carry = 1;
+    } else {
+        cpu.carry = 0;
+    }
+    if ((((a^b) & 0x80) == 0) && (((a^cpu.A) & 0x80) != 0)) {
+        cpu.overflow = 1;
+    } else  {
+        cpu.overflow = 0;
+    }
+}
+
+// Logical AND
+void and(tick_data_t* step) {
+    cpu.A = cpu.A & read(step->address);
+    set_zn_flags(cpu.A);
+}
+
+// Arithcmetic shift left
+void asl(tick_data_t* step) {
+    if (step->mode == modeAccumulator) {
+        cpu.carry = (cpu.A >> 7) & 1;
+        cpu.A <<= 1;
+        set_zn_flags(cpu.A);
+    } else {
+        uint8_t value = read(step->address);
+        cpu.carry = (value >> 7) & 1;
+        value <<= 1;
+        write(step->address, value);
+        set_zn_flags(value);
+    }
+}
+
+// Branch functions
+void bcc(tick_data_t* step) {
+    if (cpu.carry == 0) {
+        cpu.PC = step->address;
+        check_branch_cycles(step);
+    }
+}
+
+
+void bcs(tick_data_t* step) {
+    if (cpu.carry != 0) {
+        cpu.PC = step->address;
+        check_branch_cycles(step);
+    }
+}
+
+void beq(tick_data_t* step) {
+    if (cpu.zero != 0) {
+        cpu.PC = step->address;
+        check_branch_cycles(step);
+    }
+}
+
+void bit(tick_data_t* step){
+    uint8_t value = read(step->address);
+    cpu.overflow = (value >> 6) & 1;
+    set_z_flag(value & cpu.A);
+    set_n_flag(value);
+}
+
+void bmi(tick_data_t* step) {
+    if (cpu.negative != 0) {
+        cpu.PC = step->address;
+        check_branch_cycles(step);
+    }
+}
+
+void bne(tick_data_t* step) {
+    if (cpu.zero == 0) {
+        cpu.PC = step->address;
+        check_branch_cycles(step);
+    }
+}
+
+void bpl(tick_data_t* step) {
+    if (cpu.negative == 0) {
+        cpu.PC = step->address;
+        check_branch_cycles(step);
+    }
+}
+
+void brk(tick_data_t* step) {
+    push_short(cpu.PC);
+    push(generate_flags() | 0x10);
+    // sbc
+    cpu.PC = read_short(0xFFFE);
+}
+
+void bvc(tick_data_t* step) {
+    if (cpu.overflow == 0) {
+        cpu.PC = step->address;
+        check_branch_cycles(step);
+    }
+}
+
+void bvs(tick_data_t* step) {
+    if (cpu.overflow != 0) {
+        cpu.PC = step->address;
+        check_branch_cycles(step);
+    }
+}
+
+void clc(tick_data_t* step) {
+    cpu.carry = 0;
+}
+
+void cld(tick_data_t* step) {
+    cpu.decimal = 0;
+}
+
+void cli(tick_data_t* step) {
+    cpu.interrupt = 0;
+}
+
+void clv(tick_data_t* step) {
+    cpu.overflow = 0;
+}
+
+void cmp(tick_data_t* step) {
+    uint8_t value = read(step->address);
+    compare_set_flags(cpu.A, value);
+}
+
+void cmx(tick_data_t* step) {
+    uint8_t value = read(step->address);
+    compare_set_flags(cpu.X, value);
+}
+
+void cmy(tick_data_t* step) {
+    uint8_t value = read(step->address);
+    compare_set_flags(cpu.Y, value);
+}
+
+void dex(tick_data_t* step) {
+    cpu.X--;
+    set_zn_flags(cpu.X);
+}
+
+void dey(tick_data_t* step) {
+    cpu.Y--;
+    set_zn_flags(cpu.Y);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 int tick() {
     unsigned long cycles = cpu.cycles;
     switch(cpu.interrupt){
@@ -323,6 +491,7 @@ int tick() {
     step_data->pc = cpu.PC;
     step_data->address = address;
     step_data->mode = mode;
+    step_data->opcode = opcode;
     // Call function pointer
     free(step_data);
     return cpu.cycles - cycles;

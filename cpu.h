@@ -40,6 +40,7 @@ typedef struct tick_data_t {
     uint16_t address;
     uint16_t pc;
     uint8_t mode;
+    uint8_t opcode;
 } tick_data_t;
 
 enum {
