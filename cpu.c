@@ -115,6 +115,21 @@ static const uint8_t instruction_modes[256] = {
     10, 9, 6, 9, 12, 12, 12, 12, 6, 3, 6, 3, 2, 2, 2, 2,
 };
 
+void set_flags(uint8_t value) {
+    cpu.carry = (value >> 0) & 1;
+    cpu.zero = (value >> 1) & 1;
+    cpu.interrupt = (value >> 2) & 1;
+    cpu.decimal = (value >> 3) & 1;
+    cpu.breakf = (value >> 4) & 1;
+    cpu.unused = (value >> 5) & 1;
+    cpu.overflow = (value >> 6) & 1;
+    cpu.negative = (value >> 7) & 1;
+}
+
+uint16_t get_pc() {
+    return cpu.PC;
+}
+
 void init_cpu() {
     cpu.A = 0;
     cpu.X = 0;
@@ -122,7 +137,8 @@ void init_cpu() {
 
     // http://forum.6502.org/viewtopic.php?t=1708
     cpu.PC = 0;
-    cpu.PC = read_short(0xFFFC);
+    //cpu.PC = read_short(0xFFFC);
+    cpu.PC = 0xC000;
 
     cpu.S = 0xFD;
     cpu.carry = 0;
@@ -131,6 +147,7 @@ void init_cpu() {
     cpu.decimal = 0;
     cpu.overflow = 0;
     cpu.negative = 0;
+    set_flags(0x24);
 
     debug_print("%s","\033[32;1mRegisters:\033[0m\n");
     debug_print("A:  0x%02X\n", cpu.A);
@@ -167,18 +184,11 @@ uint8_t generate_flags() {
     flags |= cpu.zero << 1;
     flags |= cpu.interrupt << 2;
     flags |= cpu.decimal << 3;
+    flags |= cpu.breakf << 4;
+    flags |= cpu.unused << 5;
     flags |= cpu.overflow << 6;
     flags |= cpu.negative << 7;
     return flags;
-}
-
-void set_flags(uint8_t value) {
-    cpu.carry = (value >> 0) & 1;
-    cpu.zero = (value >> 1) & 1;
-    cpu.interrupt = (value >> 2) & 1;
-    cpu.decimal = (value >> 3) & 1;
-    cpu.overflow = (value >> 6) & 1;
-    cpu.negative = (value >> 7) & 1;
 }
 
 void reset_cpu() {
@@ -269,12 +279,14 @@ void adc(tick_data_t* step) {
     } else  {
         cpu.overflow = 0;
     }
+    debug_print(" A: 0x%02X  X: 0x%02X  Y: 0x%02X  S: 0x%02X  PC: 0x%02X  FLAGS: "BYTE_TO_BINARY_PATTERN"  CYCLES: %ld\n", cpu.A, cpu.X, cpu.Y, cpu.S, cpu.PC, BYTE_TO_BINARY(generate_flags()), cpu.cycles);
 }
 
 // Logical AND
 void and(tick_data_t* step) {
     cpu.A = cpu.A & read(step->address);
     set_zn_flags(cpu.A);
+    debug_print(" A: 0x%02X  X: 0x%02X  Y: 0x%02X  S: 0x%02X  PC: 0x%02X  FLAGS: "BYTE_TO_BINARY_PATTERN"  CYCLES: %ld\n", cpu.A, cpu.X, cpu.Y, cpu.S, cpu.PC, BYTE_TO_BINARY(generate_flags()), cpu.cycles);
 }
 
 // Arithcmetic shift left
@@ -290,6 +302,7 @@ void asl(tick_data_t* step) {
         write(step->address, value);
         set_zn_flags(value);
     }
+    debug_print(" A: 0x%02X  X: 0x%02X  Y: 0x%02X  S: 0x%02X  PC: 0x%02X  FLAGS: "BYTE_TO_BINARY_PATTERN"  CYCLES: %ld\n", cpu.A, cpu.X, cpu.Y, cpu.S, cpu.PC, BYTE_TO_BINARY(generate_flags()), cpu.cycles);
 }
 
 // Branch functions
@@ -298,6 +311,7 @@ void bcc(tick_data_t* step) {
         cpu.PC = step->address;
         check_branch_cycles(step);
     }
+    debug_print(" A: 0x%02X  X: 0x%02X  Y: 0x%02X  S: 0x%02X  PC: 0x%02X  FLAGS: "BYTE_TO_BINARY_PATTERN"  CYCLES: %ld\n", cpu.A, cpu.X, cpu.Y, cpu.S, cpu.PC, BYTE_TO_BINARY(generate_flags()), cpu.cycles);
 }
 
 
@@ -306,6 +320,7 @@ void bcs(tick_data_t* step) {
         cpu.PC = step->address;
         check_branch_cycles(step);
     }
+    debug_print(" A: 0x%02X  X: 0x%02X  Y: 0x%02X  S: 0x%02X  PC: 0x%02X  FLAGS: "BYTE_TO_BINARY_PATTERN"  CYCLES: %ld\n", cpu.A, cpu.X, cpu.Y, cpu.S, cpu.PC, BYTE_TO_BINARY(generate_flags()), cpu.cycles);
 }
 
 void beq(tick_data_t* step) {
@@ -313,6 +328,7 @@ void beq(tick_data_t* step) {
         cpu.PC = step->address;
         check_branch_cycles(step);
     }
+    debug_print(" A: 0x%02X  X: 0x%02X  Y: 0x%02X  S: 0x%02X  PC: 0x%02X  FLAGS: "BYTE_TO_BINARY_PATTERN"  CYCLES: %ld\n", cpu.A, cpu.X, cpu.Y, cpu.S, cpu.PC, BYTE_TO_BINARY(generate_flags()), cpu.cycles);
 }
 
 void bit(tick_data_t* step){
@@ -320,6 +336,7 @@ void bit(tick_data_t* step){
     cpu.overflow = (value >> 6) & 1;
     set_z_flag(value & cpu.A);
     set_n_flag(value);
+    debug_print(" A: 0x%02X  X: 0x%02X  Y: 0x%02X  S: 0x%02X  PC: 0x%02X  FLAGS: "BYTE_TO_BINARY_PATTERN"  CYCLES: %ld\n", cpu.A, cpu.X, cpu.Y, cpu.S, cpu.PC, BYTE_TO_BINARY(generate_flags()), cpu.cycles);
 }
 
 void bmi(tick_data_t* step) {
@@ -327,6 +344,7 @@ void bmi(tick_data_t* step) {
         cpu.PC = step->address;
         check_branch_cycles(step);
     }
+    debug_print(" A: 0x%02X  X: 0x%02X  Y: 0x%02X  S: 0x%02X  PC: 0x%02X  FLAGS: "BYTE_TO_BINARY_PATTERN"  CYCLES: %ld\n", cpu.A, cpu.X, cpu.Y, cpu.S, cpu.PC, BYTE_TO_BINARY(generate_flags()), cpu.cycles);
 }
 
 void bne(tick_data_t* step) {
@@ -334,6 +352,7 @@ void bne(tick_data_t* step) {
         cpu.PC = step->address;
         check_branch_cycles(step);
     }
+    debug_print(" A: 0x%02X  X: 0x%02X  Y: 0x%02X  S: 0x%02X  PC: 0x%02X  FLAGS: "BYTE_TO_BINARY_PATTERN"  CYCLES: %ld\n", cpu.A, cpu.X, cpu.Y, cpu.S, cpu.PC, BYTE_TO_BINARY(generate_flags()), cpu.cycles);
 }
 
 void bpl(tick_data_t* step) {
@@ -341,6 +360,7 @@ void bpl(tick_data_t* step) {
         cpu.PC = step->address;
         check_branch_cycles(step);
     }
+    debug_print(" A: 0x%02X  X: 0x%02X  Y: 0x%02X  S: 0x%02X  PC: 0x%02X  FLAGS: "BYTE_TO_BINARY_PATTERN"  CYCLES: %ld\n", cpu.A, cpu.X, cpu.Y, cpu.S, cpu.PC, BYTE_TO_BINARY(generate_flags()), cpu.cycles);
 }
 
 void sbc(tick_data_t* step) {
@@ -359,6 +379,7 @@ void sbc(tick_data_t* step) {
     } else {
         cpu.overflow = 0;
     }
+    debug_print(" A: 0x%02X  X: 0x%02X  Y: 0x%02X  S: 0x%02X  PC: 0x%02X  FLAGS: "BYTE_TO_BINARY_PATTERN"  CYCLES: %ld\n", cpu.A, cpu.X, cpu.Y, cpu.S, cpu.PC, BYTE_TO_BINARY(generate_flags()), cpu.cycles);
 }
 
 void brk(tick_data_t* step) {
@@ -366,6 +387,7 @@ void brk(tick_data_t* step) {
     push(generate_flags() | 0x10);
     sbc(step);
     cpu.PC = read_short(0xFFFE);
+    debug_print(" A: 0x%02X  X: 0x%02X  Y: 0x%02X  S: 0x%02X  PC: 0x%02X  FLAGS: "BYTE_TO_BINARY_PATTERN"  CYCLES: %ld\n", cpu.A, cpu.X, cpu.Y, cpu.S, cpu.PC, BYTE_TO_BINARY(generate_flags()), cpu.cycles);
 }
 
 void bvc(tick_data_t* step) {
@@ -373,6 +395,7 @@ void bvc(tick_data_t* step) {
         cpu.PC = step->address;
         check_branch_cycles(step);
     }
+    debug_print(" A: 0x%02X  X: 0x%02X  Y: 0x%02X  S: 0x%02X  PC: 0x%02X  FLAGS: "BYTE_TO_BINARY_PATTERN"  CYCLES: %ld\n", cpu.A, cpu.X, cpu.Y, cpu.S, cpu.PC, BYTE_TO_BINARY(generate_flags()), cpu.cycles);
 }
 
 void bvs(tick_data_t* step) {
@@ -380,98 +403,118 @@ void bvs(tick_data_t* step) {
         cpu.PC = step->address;
         check_branch_cycles(step);
     }
+    debug_print(" A: 0x%02X  X: 0x%02X  Y: 0x%02X  S: 0x%02X  PC: 0x%02X  FLAGS: "BYTE_TO_BINARY_PATTERN"  CYCLES: %ld\n", cpu.A, cpu.X, cpu.Y, cpu.S, cpu.PC, BYTE_TO_BINARY(generate_flags()), cpu.cycles);
 }
 
 void clc(tick_data_t* step) {
     cpu.carry = 0;
+    debug_print(" A: 0x%02X  X: 0x%02X  Y: 0x%02X  S: 0x%02X  PC: 0x%02X  FLAGS: "BYTE_TO_BINARY_PATTERN"  CYCLES: %ld\n", cpu.A, cpu.X, cpu.Y, cpu.S, cpu.PC, BYTE_TO_BINARY(generate_flags()), cpu.cycles);
 }
 
 void cld(tick_data_t* step) {
     cpu.decimal = 0;
+    debug_print(" A: 0x%02X  X: 0x%02X  Y: 0x%02X  S: 0x%02X  PC: 0x%02X  FLAGS: "BYTE_TO_BINARY_PATTERN"  CYCLES: %ld\n", cpu.A, cpu.X, cpu.Y, cpu.S, cpu.PC, BYTE_TO_BINARY(generate_flags()), cpu.cycles);
 }
 
 void cli(tick_data_t* step) {
     cpu.interrupt = 0;
+    debug_print(" A: 0x%02X  X: 0x%02X  Y: 0x%02X  S: 0x%02X  PC: 0x%02X  FLAGS: "BYTE_TO_BINARY_PATTERN"  CYCLES: %ld\n", cpu.A, cpu.X, cpu.Y, cpu.S, cpu.PC, BYTE_TO_BINARY(generate_flags()), cpu.cycles);
 }
 
 void clv(tick_data_t* step) {
     cpu.overflow = 0;
+    debug_print(" A: 0x%02X  X: 0x%02X  Y: 0x%02X  S: 0x%02X  PC: 0x%02X  FLAGS: "BYTE_TO_BINARY_PATTERN"  CYCLES: %ld\n", cpu.A, cpu.X, cpu.Y, cpu.S, cpu.PC, BYTE_TO_BINARY(generate_flags()), cpu.cycles);
 }
 
 void cmp(tick_data_t* step) {
     uint8_t value = read(step->address);
     compare_set_flags(cpu.A, value);
+    debug_print(" A: 0x%02X  X: 0x%02X  Y: 0x%02X  S: 0x%02X  PC: 0x%02X  FLAGS: "BYTE_TO_BINARY_PATTERN"  CYCLES: %ld\n", cpu.A, cpu.X, cpu.Y, cpu.S, cpu.PC, BYTE_TO_BINARY(generate_flags()), cpu.cycles);
 }
 
-void cmx(tick_data_t* step) {
+void cpx(tick_data_t* step) {
     uint8_t value = read(step->address);
     compare_set_flags(cpu.X, value);
+    debug_print(" A: 0x%02X  X: 0x%02X  Y: 0x%02X  S: 0x%02X  PC: 0x%02X  FLAGS: "BYTE_TO_BINARY_PATTERN"  CYCLES: %ld\n", cpu.A, cpu.X, cpu.Y, cpu.S, cpu.PC, BYTE_TO_BINARY(generate_flags()), cpu.cycles);
 }
 
-void cmy(tick_data_t* step) {
+void cpy(tick_data_t* step) {
     uint8_t value = read(step->address);
     compare_set_flags(cpu.Y, value);
+    debug_print(" A: 0x%02X  X: 0x%02X  Y: 0x%02X  S: 0x%02X  PC: 0x%02X  FLAGS: "BYTE_TO_BINARY_PATTERN"  CYCLES: %ld\n", cpu.A, cpu.X, cpu.Y, cpu.S, cpu.PC, BYTE_TO_BINARY(generate_flags()), cpu.cycles);
 }
 
 void dec(tick_data_t* step) {
     uint8_t value = read(step->address) - 1;
     write(step->address, value);
     set_zn_flags(value);
+    debug_print(" A: 0x%02X  X: 0x%02X  Y: 0x%02X  S: 0x%02X  PC: 0x%02X  FLAGS: "BYTE_TO_BINARY_PATTERN"  CYCLES: %ld\n", cpu.A, cpu.X, cpu.Y, cpu.S, cpu.PC, BYTE_TO_BINARY(generate_flags()), cpu.cycles);
 }
 
 void dex(tick_data_t* step) {
     cpu.X--;
     set_zn_flags(cpu.X);
+    debug_print(" A: 0x%02X  X: 0x%02X  Y: 0x%02X  S: 0x%02X  PC: 0x%02X  FLAGS: "BYTE_TO_BINARY_PATTERN"  CYCLES: %ld\n", cpu.A, cpu.X, cpu.Y, cpu.S, cpu.PC, BYTE_TO_BINARY(generate_flags()), cpu.cycles);
 }
 
 void dey(tick_data_t* step) {
     cpu.Y--;
     set_zn_flags(cpu.Y);
+    debug_print(" A: 0x%02X  X: 0x%02X  Y: 0x%02X  S: 0x%02X  PC: 0x%02X  FLAGS: "BYTE_TO_BINARY_PATTERN"  CYCLES: %ld\n", cpu.A, cpu.X, cpu.Y, cpu.S, cpu.PC, BYTE_TO_BINARY(generate_flags()), cpu.cycles);
 }
 
 void eor(tick_data_t* step) {
     cpu.A = cpu.A ^ read(step->address);
     set_zn_flags(cpu.A);
+    debug_print(" A: 0x%02X  X: 0x%02X  Y: 0x%02X  S: 0x%02X  PC: 0x%02X  FLAGS: "BYTE_TO_BINARY_PATTERN"  CYCLES: %ld\n", cpu.A, cpu.X, cpu.Y, cpu.S, cpu.PC, BYTE_TO_BINARY(generate_flags()), cpu.cycles);
 }
 
 void inc(tick_data_t* step) {
     uint8_t value = read(step->address) + 1;
     write(step->address, value);
     set_zn_flags(value);
+    debug_print(" A: 0x%02X  X: 0x%02X  Y: 0x%02X  S: 0x%02X  PC: 0x%02X  FLAGS: "BYTE_TO_BINARY_PATTERN"  CYCLES: %ld\n", cpu.A, cpu.X, cpu.Y, cpu.S, cpu.PC, BYTE_TO_BINARY(generate_flags()), cpu.cycles);
 }
 
 void inx(tick_data_t* step) {
     cpu.X++;
     set_zn_flags(cpu.X);
+    debug_print(" A: 0x%02X  X: 0x%02X  Y: 0x%02X  S: 0x%02X  PC: 0x%02X  FLAGS: "BYTE_TO_BINARY_PATTERN"  CYCLES: %ld\n", cpu.A, cpu.X, cpu.Y, cpu.S, cpu.PC, BYTE_TO_BINARY(generate_flags()), cpu.cycles);
 }
 
 void iny(tick_data_t* step) {
     cpu.Y++;
     set_zn_flags(cpu.Y);
+    debug_print(" A: 0x%02X  X: 0x%02X  Y: 0x%02X  S: 0x%02X  PC: 0x%02X  FLAGS: "BYTE_TO_BINARY_PATTERN"  CYCLES: %ld\n", cpu.A, cpu.X, cpu.Y, cpu.S, cpu.PC, BYTE_TO_BINARY(generate_flags()), cpu.cycles);
 }
 
 void jmp(tick_data_t* step) {
     cpu.PC = step->address;
+    debug_print(" A: 0x%02X  X: 0x%02X  Y: 0x%02X  S: 0x%02X  PC: 0x%02X  FLAGS: "BYTE_TO_BINARY_PATTERN"  CYCLES: %ld\n", cpu.A, cpu.X, cpu.Y, cpu.S, cpu.PC, BYTE_TO_BINARY(generate_flags()), cpu.cycles);
 }
 
 void jsr(tick_data_t* step) {
     push_short(cpu.PC - 1);
     cpu.PC = step->address;
+    debug_print(" A: 0x%02X  X: 0x%02X  Y: 0x%02X  S: 0x%02X  PC: 0x%02X  FLAGS: "BYTE_TO_BINARY_PATTERN"  CYCLES: %ld\n", cpu.A, cpu.X, cpu.Y, cpu.S, cpu.PC, BYTE_TO_BINARY(generate_flags()), cpu.cycles);
 }
 
 void lda(tick_data_t* step) {
     cpu.A = read(step->address);
     set_zn_flags(cpu.A);
+    debug_print(" A: 0x%02X  X: 0x%02X  Y: 0x%02X  S: 0x%02X  PC: 0x%02X  FLAGS: "BYTE_TO_BINARY_PATTERN"  CYCLES: %ld\n", cpu.A, cpu.X, cpu.Y, cpu.S, cpu.PC, BYTE_TO_BINARY(generate_flags()), cpu.cycles);
 }
 
 void ldx(tick_data_t* step) {
     cpu.X = read(step->address);
     set_zn_flags(cpu.X);
+    debug_print(" A: 0x%02X  X: 0x%02X  Y: 0x%02X  S: 0x%02X  PC: 0x%02X  FLAGS: "BYTE_TO_BINARY_PATTERN"  CYCLES: %ld\n", cpu.A, cpu.X, cpu.Y, cpu.S, cpu.PC, BYTE_TO_BINARY(generate_flags()), cpu.cycles);
 }
 
 void ldy(tick_data_t* step) {
     cpu.Y = read(step->address);
     set_zn_flags(cpu.Y);
+    debug_print(" A: 0x%02X  X: 0x%02X  Y: 0x%02X  S: 0x%02X  PC: 0x%02X  FLAGS: "BYTE_TO_BINARY_PATTERN"  CYCLES: %ld\n", cpu.A, cpu.X, cpu.Y, cpu.S, cpu.PC, BYTE_TO_BINARY(generate_flags()), cpu.cycles);
 }
 
 void lsr(tick_data_t* step) {
@@ -486,31 +529,38 @@ void lsr(tick_data_t* step) {
         write(step->address, value);
         set_zn_flags(value);
     }
+    debug_print(" A: 0x%02X  X: 0x%02X  Y: 0x%02X  S: 0x%02X  PC: 0x%02X  FLAGS: "BYTE_TO_BINARY_PATTERN"  CYCLES: %ld\n", cpu.A, cpu.X, cpu.Y, cpu.S, cpu.PC, BYTE_TO_BINARY(generate_flags()), cpu.cycles);
 }
 
 void nop(tick_data_t* step) {
+    debug_print(" A: 0x%02X  X: 0x%02X  Y: 0x%02X  S: 0x%02X  PC: 0x%02X  FLAGS: "BYTE_TO_BINARY_PATTERN"  CYCLES: %ld\n", cpu.A, cpu.X, cpu.Y, cpu.S, cpu.PC, BYTE_TO_BINARY(generate_flags()), cpu.cycles);
 }
 
 void ora(tick_data_t* step) {
     cpu.A = cpu.A | read(step->address);
     set_zn_flags(cpu.A);
+    debug_print(" A: 0x%02X  X: 0x%02X  Y: 0x%02X  S: 0x%02X  PC: 0x%02X  FLAGS: "BYTE_TO_BINARY_PATTERN"  CYCLES: %ld\n", cpu.A, cpu.X, cpu.Y, cpu.S, cpu.PC, BYTE_TO_BINARY(generate_flags()), cpu.cycles);
 }
 
 void pha(tick_data_t* step) {
     push(cpu.A);
+    debug_print(" A: 0x%02X  X: 0x%02X  Y: 0x%02X  S: 0x%02X  PC: 0x%02X  FLAGS: "BYTE_TO_BINARY_PATTERN"  CYCLES: %ld\n", cpu.A, cpu.X, cpu.Y, cpu.S, cpu.PC, BYTE_TO_BINARY(generate_flags()), cpu.cycles);
 }
 
 void php(tick_data_t* step) {
     push(generate_flags() | 0x10);
+    debug_print(" A: 0x%02X  X: 0x%02X  Y: 0x%02X  S: 0x%02X  PC: 0x%02X  FLAGS: "BYTE_TO_BINARY_PATTERN"  CYCLES: %ld\n", cpu.A, cpu.X, cpu.Y, cpu.S, cpu.PC, BYTE_TO_BINARY(generate_flags()), cpu.cycles);
 }
 
 void pla(tick_data_t* step) {
     cpu.A = pop();
     set_zn_flags(cpu.A);
+    debug_print(" A: 0x%02X  X: 0x%02X  Y: 0x%02X  S: 0x%02X  PC: 0x%02X  FLAGS: "BYTE_TO_BINARY_PATTERN"  CYCLES: %ld\n", cpu.A, cpu.X, cpu.Y, cpu.S, cpu.PC, BYTE_TO_BINARY(generate_flags()), cpu.cycles);
 }
 
 void plp(tick_data_t* step) {
     set_flags( (pop() & 0xEF) | 0x20);
+    debug_print(" A: 0x%02X  X: 0x%02X  Y: 0x%02X  S: 0x%02X  PC: 0x%02X  FLAGS: "BYTE_TO_BINARY_PATTERN"  CYCLES: %ld\n", cpu.A, cpu.X, cpu.Y, cpu.S, cpu.PC, BYTE_TO_BINARY(generate_flags()), cpu.cycles);
 }
 
 void rol(tick_data_t* step) {
@@ -527,6 +577,7 @@ void rol(tick_data_t* step) {
         write(step->address, value);
         set_zn_flags(value);
     }
+    debug_print(" A: 0x%02X  X: 0x%02X  Y: 0x%02X  S: 0x%02X  PC: 0x%02X  FLAGS: "BYTE_TO_BINARY_PATTERN"  CYCLES: %ld\n", cpu.A, cpu.X, cpu.Y, cpu.S, cpu.PC, BYTE_TO_BINARY(generate_flags()), cpu.cycles);
 }
 
 void ror(tick_data_t* step) {
@@ -543,72 +594,126 @@ void ror(tick_data_t* step) {
         write(step->address, value);
         set_zn_flags(value);
     }
+    debug_print(" A: 0x%02X  X: 0x%02X  Y: 0x%02X  S: 0x%02X  PC: 0x%02X  FLAGS: "BYTE_TO_BINARY_PATTERN"  CYCLES: %ld\n", cpu.A, cpu.X, cpu.Y, cpu.S, cpu.PC, BYTE_TO_BINARY(generate_flags()), cpu.cycles);
 }
 
 void rti(tick_data_t* step) {
     set_flags((pop() & 0xEF) | 0x20);
     cpu.PC = pop_short();
+    debug_print(" A: 0x%02X  X: 0x%02X  Y: 0x%02X  S: 0x%02X  PC: 0x%02X  FLAGS: "BYTE_TO_BINARY_PATTERN"  CYCLES: %ld\n", cpu.A, cpu.X, cpu.Y, cpu.S, cpu.PC, BYTE_TO_BINARY(generate_flags()), cpu.cycles);
 }
 
 void rts(tick_data_t* step) {
-    cpu.PC = pop_short();
+    cpu.PC = pop_short() + 1;
+    debug_print(" A: 0x%02X  X: 0x%02X  Y: 0x%02X  S: 0x%02X  PC: 0x%02X  FLAGS: "BYTE_TO_BINARY_PATTERN"  CYCLES: %ld\n", cpu.A, cpu.X, cpu.Y, cpu.S, cpu.PC, BYTE_TO_BINARY(generate_flags()), cpu.cycles);
 }
 
 
 void sec(tick_data_t* step) {
     cpu.carry = 1;
+    debug_print(" A: 0x%02X  X: 0x%02X  Y: 0x%02X  S: 0x%02X  PC: 0x%02X  FLAGS: "BYTE_TO_BINARY_PATTERN"  CYCLES: %ld\n", cpu.A, cpu.X, cpu.Y, cpu.S, cpu.PC, BYTE_TO_BINARY(generate_flags()), cpu.cycles);
 }
 
 void sed(tick_data_t* step) {
     cpu.decimal = 1;
+    debug_print(" A: 0x%02X  X: 0x%02X  Y: 0x%02X  S: 0x%02X  PC: 0x%02X  FLAGS: "BYTE_TO_BINARY_PATTERN"  CYCLES: %ld\n", cpu.A, cpu.X, cpu.Y, cpu.S, cpu.PC, BYTE_TO_BINARY(generate_flags()), cpu.cycles);
 }
 
 void sei(tick_data_t* step) {
     cpu.interrupt = 1;
+    debug_print(" A: 0x%02X  X: 0x%02X  Y: 0x%02X  S: 0x%02X  PC: 0x%02X  FLAGS: "BYTE_TO_BINARY_PATTERN"  CYCLES: %ld\n", cpu.A, cpu.X, cpu.Y, cpu.S, cpu.PC, BYTE_TO_BINARY(generate_flags()), cpu.cycles);
 }
 
 void sta(tick_data_t* step) {
     write(step->address, cpu.A);
+    debug_print(" A: 0x%02X  X: 0x%02X  Y: 0x%02X  S: 0x%02X  PC: 0x%02X  FLAGS: "BYTE_TO_BINARY_PATTERN"  CYCLES: %ld\n", cpu.A, cpu.X, cpu.Y, cpu.S, cpu.PC, BYTE_TO_BINARY(generate_flags()), cpu.cycles);
 }
 
 void stx(tick_data_t* step) {
     write(step->address, cpu.X);
+    debug_print(" A: 0x%02X  X: 0x%02X  Y: 0x%02X  S: 0x%02X  PC: 0x%02X  FLAGS: "BYTE_TO_BINARY_PATTERN"  CYCLES: %ld\n", cpu.A, cpu.X, cpu.Y, cpu.S, cpu.PC, BYTE_TO_BINARY(generate_flags()), cpu.cycles);
 }
 
 void sty(tick_data_t* step) {
     write(step->address, cpu.Y);
+    debug_print(" A: 0x%02X  X: 0x%02X  Y: 0x%02X  S: 0x%02X  PC: 0x%02X  FLAGS: "BYTE_TO_BINARY_PATTERN"  CYCLES: %ld\n", cpu.A, cpu.X, cpu.Y, cpu.S, cpu.PC, BYTE_TO_BINARY(generate_flags()), cpu.cycles);
 }
 
 void tax(tick_data_t* step) {
     cpu.X = cpu.A;
     set_zn_flags(cpu.X);
+    debug_print(" A: 0x%02X  X: 0x%02X  Y: 0x%02X  S: 0x%02X  PC: 0x%02X  FLAGS: "BYTE_TO_BINARY_PATTERN"  CYCLES: %ld\n", cpu.A, cpu.X, cpu.Y, cpu.S, cpu.PC, BYTE_TO_BINARY(generate_flags()), cpu.cycles);
 }
 
 void tay(tick_data_t* step) {
     cpu.Y = cpu.A;
     set_zn_flags(cpu.Y);
+    debug_print(" A: 0x%02X  X: 0x%02X  Y: 0x%02X  S: 0x%02X  PC: 0x%02X  FLAGS: "BYTE_TO_BINARY_PATTERN"  CYCLES: %ld\n", cpu.A, cpu.X, cpu.Y, cpu.S, cpu.PC, BYTE_TO_BINARY(generate_flags()), cpu.cycles);
 }
 
 void tsx(tick_data_t* step) {
     cpu.X = cpu.S;
     set_zn_flags(cpu.X);
+    debug_print(" A: 0x%02X  X: 0x%02X  Y: 0x%02X  S: 0x%02X  PC: 0x%02X  FLAGS: "BYTE_TO_BINARY_PATTERN"  CYCLES: %ld\n", cpu.A, cpu.X, cpu.Y, cpu.S, cpu.PC, BYTE_TO_BINARY(generate_flags()), cpu.cycles);
 }
 
 void txa(tick_data_t* step) {
     cpu.A = cpu.X;
     set_zn_flags(cpu.A);
+    debug_print(" A: 0x%02X  X: 0x%02X  Y: 0x%02X  S: 0x%02X  PC: 0x%02X  FLAGS: "BYTE_TO_BINARY_PATTERN"  CYCLES: %ld\n", cpu.A, cpu.X, cpu.Y, cpu.S, cpu.PC, BYTE_TO_BINARY(generate_flags()), cpu.cycles);
 }
 
 void txs(tick_data_t* step) {
     cpu.S = cpu.X;
+    debug_print(" A: 0x%02X  X: 0x%02X  Y: 0x%02X  S: 0x%02X  PC: 0x%02X  FLAGS: "BYTE_TO_BINARY_PATTERN"  CYCLES: %ld\n", cpu.A, cpu.X, cpu.Y, cpu.S, cpu.PC, BYTE_TO_BINARY(generate_flags()), cpu.cycles);
 }
 
 void tya(tick_data_t* step) {
     cpu.A = cpu.Y;
     set_zn_flags(cpu.A);
+    debug_print(" A: 0x%02X  X: 0x%02X  Y: 0x%02X  S: 0x%02X  PC: 0x%02X  FLAGS: "BYTE_TO_BINARY_PATTERN"  CYCLES: %ld\n", cpu.A, cpu.X, cpu.Y, cpu.S, cpu.PC, BYTE_TO_BINARY(generate_flags()), cpu.cycles);
 }
 
-int tick() {
+
+typedef void (*cpu_fn_ptr)(tick_data_t*);
+
+cpu_fn_ptr function_array[256] = {
+    brk, ora, nop, nop, nop, ora, asl, nop,
+    php, ora, asl, nop, nop, ora, asl, nop,
+    bpl, ora, nop, nop, nop, ora, asl, nop,
+    clc, ora, nop, nop, nop, ora, asl, nop,
+    jsr, and, nop, nop, bit, and, rol, nop,
+    plp, and, rol, nop, bit, and, rol, nop,
+    bmi, and, nop, nop, nop, and, rol, nop,
+    sec, and, nop, nop, nop, and, rol, nop,
+    rti, eor, nop, nop, nop, eor, lsr, nop,
+    pha, eor, lsr, nop, jmp, eor, lsr, nop,
+    bvc, eor, nop, nop, nop, eor, lsr, nop,
+    cli, eor, nop, nop, nop, eor, lsr, nop,
+    rts, adc, nop, nop, nop, adc, ror, nop,
+    pla, adc, ror, nop, jmp, adc, ror, nop,
+    bvs, adc, nop, nop, nop, adc, ror, nop,
+    sei, adc, nop, nop, nop, adc, ror, nop,
+    nop, sta, nop, nop, sty, sta, stx, nop,
+    dey, nop, txa, nop, sty, sta, stx, nop,
+    bcc, sta, nop, nop, sty, sta, stx, nop,
+    tya, sta, txs, nop, nop, sta, nop, nop,
+    ldy, lda, ldx, nop, ldy, lda, ldx, nop,
+    tay, lda, tax, nop, ldy, lda, ldx, nop,
+    bcs, lda, nop, nop, ldy, lda, ldx, nop,
+    clv, lda, tsx, nop, ldy, lda, ldx, nop,
+    cpy, cmp, nop, nop, cpy, cmp, dec, nop,
+    iny, cmp, dex, nop, cpy, cmp, dec, nop,
+    bne, cmp, nop, nop, nop, cmp, dec, nop,
+    cld, cmp, nop, nop, nop, cmp, dec, nop,
+    cpx, sbc, nop, nop, cpx, sbc, inc, nop,
+    inx, sbc, nop, sbc, cpx, sbc, inc, nop,
+    beq, sbc, nop, nop, nop, sbc, inc, nop,
+    sed, sbc, nop, nop, nop, sbc, inc, nop,
+};
+
+
+int cpu_tick() {
     unsigned long cycles = cpu.cycles;
     switch(cpu.interrupt){
         case nmi_interrupt:
@@ -686,7 +791,7 @@ int tick() {
     step_data->address = address;
     step_data->mode = mode;
     step_data->opcode = opcode;
-    // Call function pointer
+    function_array[opcode](step_data);
     free(step_data);
     return cpu.cycles - cycles;
 }

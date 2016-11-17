@@ -19,6 +19,21 @@ int main (int argc, char** argv) {
     init_memory();
     init_ppu();
     init_cpu();
+   
+    long run_count = 0;
+    while(1) {
+        cpu_tick();
+        if(run_count%50 == 0) {
+            static char ch;
+            scanf("%c", &ch);
+        }
+        run_count++;
+        // if(get_pc() == 0xC66E) {
+        //     break;
+        // }
+    }
+
+    printf("VALUE AT 0x02: 0x%02X\n", read(0x02));
 
    free(ROM);
 }

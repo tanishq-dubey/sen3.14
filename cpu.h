@@ -31,6 +31,8 @@ typedef struct cpu_t {
     unsigned char zero;
     unsigned char interrupt;
     unsigned char decimal;
+    unsigned char breakf;
+    unsigned char unused;
     unsigned char overflow;
     unsigned char negative;
     unsigned long cycles;
@@ -44,12 +46,14 @@ typedef struct tick_data_t {
 } tick_data_t;
 
 enum {
+    pacle_intr,
     none_interrupt,
     nmi_interrupt,
     irq_interrupt,
 } interrupt_mode;
 
 enum {
+    test,
     modeAbsolute,
     modeAbsoluteX,
     modeAbsoluteY,
@@ -68,6 +72,7 @@ enum {
 static struct cpu_t cpu;
 void init_cpu();
 void reset_cpu();
-int tick();
+int cpu_tick();
+uint16_t get_pc();
 
 #endif

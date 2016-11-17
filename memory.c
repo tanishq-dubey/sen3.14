@@ -16,11 +16,10 @@ void init_memory() {
     chr_rom_page *chr_pages = malloc(get_chr_banks() * sizeof(chr_rom_page));
     int i, j;
     int offset = 0;
-    debug_print("%s %d", "PRG ROM BANKS", gamepack.prg_rom_banks);
+    debug_print("%s %d\n", "PRG ROM BANKS", gamepack.prg_rom_banks);
     for (i = 0; i < get_prg_banks(); i++) {
         for (j = 0; j < 0x8000; j++) {
             prg_pages[i].data[j] = rom_file[offset];
-            debug_print("set %d and %d: 0x%02x from 0x%02x", i, j, prg_pages[i].data[j], rom_file[offset]);
             offset++;
         }
     }
@@ -38,8 +37,17 @@ void init_memory() {
         for (i = 0; i < 4; i++) {
             debug_print("0x%02X: 0x%02X 0x%02X 0x%02X 0x%02X\n", 0x8000+(i*4), read(0x8000+(i*4)), read(0x8001+(i*4)), read(0x8002+(i*4)), read(0x8003+(i*4)));
         }
+        printf("\n");
+        for (i = 0; i < 4; i++) {
+            debug_print("0x%02X: 0x%02X 0x%02X 0x%02X 0x%02X\n", 0xB930+(i*4), read(0xB930+(i*4)), read(0xB931+(i*4)), read(0xB932+(i*4)), read(0xB933+(i*4)));
+        }
+        printf("\n");
         for (i = 0; i < 4; i++) {
             debug_print("0x%02X: 0x%02X 0x%02X 0x%02X 0x%02X\n", 0xC000+(i*4), read(0xC000+(i*4)), read(0xC001+(i*4)), read(0xC002+(i*4)), read(0xC003+(i*4)));
+        }
+        printf("\n");
+        for (i = 0; i < 4; i++) {
+            debug_print("0x%02X: 0x%02X 0x%02X 0x%02X 0x%02X\n", 0xF930+(i*4), read(0xF930+(i*4)), read(0xF931+(i*4)), read(0xF932+(i*4)), read(0xF933+(i*4)));
         }
     }
 }
@@ -74,7 +82,7 @@ uint8_t read(uint16_t address) {
 }
 
 uint16_t read_short(uint16_t address) {
-    return (uint16_t)((read(address) << 8) | read(address));
+    return (uint16_t)((read(address + 1) << 8) | read(address));
 }
 
 uint16_t read_short_bad(uint16_t address) {

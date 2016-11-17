@@ -1,0 +1,42 @@
+[33mgame.c:20:init_game()[0m: [32;1mGame init info[0m
+[33mgame.c:22:init_game()[0m: 0x4C 
+[33mgame.c:22:init_game()[0m: 0xF5 
+[33mgame.c:22:init_game()[0m: 0xC5 
+[33mgame.c:22:init_game()[0m: 0x60 
+[33mgame.c:22:init_game()[0m: 0x78 
+[33mgame.c:22:init_game()[0m: 0xD8 
+[33mgame.c:22:init_game()[0m: 0xA2 
+[33mgame.c:22:init_game()[0m: 0xFF 
+[33mgame.c:24:init_game()[0m: PRG ROM Size: 0x4000
+[33mgame.c:25:init_game()[0m: PRG ROM Bank: 0x01
+[33mgame.c:26:init_game()[0m: CHR ROM Size: 0x2000
+[33mgame.c:27:init_game()[0m: CHR ROM Bank: 0x01
+[33mgame.c:28:init_game()[0m: Flag 6:       0x00
+[33mgame.c:29:init_game()[0m: Flag 7:       0x00
+[33mgame.c:30:init_game()[0m: Mapper Mode:  0x00
+[33mmemory.c:14:init_memory()[0m: [32;1mMemory init info:[0m
+[33mmemory.c:19:init_memory()[0m: PRG ROM BANKS 0[33mmmc.c:8:init_mmc()[0m: initalizing mapper 0
+[33mmemory.c:38:init_memory()[0m: 0x8000: 0x4C 0xF5 0xC5 0x60
+[33mmemory.c:38:init_memory()[0m: 0x8004: 0x78 0xD8 0xA2 0xFF
+[33mmemory.c:38:init_memory()[0m: 0x8008: 0x9A 0xAD 0x02 0x20
+[33mmemory.c:38:init_memory()[0m: 0x800C: 0x10 0xFB 0xAD 0x02
+[33mmemory.c:41:init_memory()[0m: 0xC000: 0x4C 0xF5 0xC5 0x60
+[33mmemory.c:41:init_memory()[0m: 0xC004: 0x78 0xD8 0xA2 0xFF
+[33mmemory.c:41:init_memory()[0m: 0xC008: 0x9A 0xAD 0x02 0x20
+[33mmemory.c:41:init_memory()[0m: 0xC00C: 0x10 0xFB 0xAD 0x02
+[33mppu.c:27:init_ppu()[0m: [32;1mPPU Register Data:[0m
+[33mppu.c:28:init_ppu()[0m: 0x2000: 0x00
+[33mppu.c:29:init_ppu()[0m: 0x2001: 0x00
+[33mppu.c:30:init_ppu()[0m: 0x2002: 0x00
+[33mppu.c:31:init_ppu()[0m: 0x2003: 0x00
+[33mppu.c:32:init_ppu()[0m: 0x2004: 0x00
+[33mppu.c:33:init_ppu()[0m: 0x2005: 0x00
+[33mppu.c:34:init_ppu()[0m: 0x2006: 0x00
+[33mppu.c:35:init_ppu()[0m: 0x2007: 0x00
+[33mcpu.c:136:init_cpu()[0m: [32;1mRegisters:[0m
+[33mcpu.c:137:init_cpu()[0m: A:  0x00
+[33mcpu.c:138:init_cpu()[0m: X:  0x00
+[33mcpu.c:139:init_cpu()[0m: Y:  0x00
+[33mcpu.c:140:init_cpu()[0m: PC: 0xC000
+[33mcpu.c:141:init_cpu()[0m: S:  0xFD
+[33mcpu.c:483:jmp()[0m:  A: 0x00  X: 0x00  Y: 0x00  S: 0xFD  PC: 0xC5F5  FLAGS: 0x00  CYCLES: 3
