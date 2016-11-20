@@ -25,9 +25,13 @@ uint8_t y_offset;
 
 bool addr_write;
 
+unsigned long ppu_cycles;
+
 void init_ppu();
 void reset_ppu();
 void ppu_write(uint16_t address, uint8_t value);
+uint8_t ppu_read(uint16_t address);
+void normalize_address(uint16_t address);
 
 //getting all the read write info on https://wiki.nesdev.com/w/index.php/PPU_registers#OAMADDR
 
