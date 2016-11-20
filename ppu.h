@@ -17,6 +17,7 @@ uint8_t OAMDATA;
 uint16_t PPUSCROLL;
 uint16_t PPUADDR;
 uint8_t PPUDATA;
+uint8_t OAMDMA;
 
 bool x_or_y_scroll;
 uint8_t x_offset;
@@ -43,5 +44,6 @@ void write_OAMDATA(uint8_t value);
 void write_SCROLL(uint8_t value);
 void write_VRAMADDR(uint8_t value);
 void write_VRAMDATA(uint8_t value);
+void write_OAMDMA(uint8_t value);
 
 #endif

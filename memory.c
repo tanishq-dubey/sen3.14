@@ -2,89 +2,66 @@
 #include "mmc.h"
 
 void init_memory() {
-    memory.memory_location = (uint8_t*)malloc(0x10000);
-
-    // Get rom file and copy it over to the RAM
-    // Memory map from: http://fms.komkon.org/EMUL8/NES.html
-    uint8_t* rom_file = get_rom_file();
-    memcpy(&memory.memory_location[0x8000], rom_file + 16384, 16384);
-    memcpy(&memory.memory_location[0xC000], rom_file, 16384);
-    memory.ppu_register_six_write  = 0;
-    memory.ppu_register_five_write = 0;
-    debug_print("%s", "\033[32;1mMemory init info:\033[0m\n");
-    prg_rom_page *prg_pages = malloc(get_prg_banks() * sizeof(prg_rom_page));
-    chr_rom_page *chr_pages = malloc(get_chr_banks() * sizeof(chr_rom_page));
-    int i, j;
+    // Initalize the 3 types of memory
+    memory.sys_ram = (uint8_t*)malloc(sizeof(uint8_t) * 2048);
+    memory.prg_mem = (uint8_t*)malloc(sizeof(uint8_t) * get_prg_banks() * 16384);
+    int chr_size = 0;
+    if (get_chr_banks() == 0) {
+        memory.chr_mem = (uint8_t*)malloc(sizeof(uint8_t) * 8192);
+        chr_size = 8192;
+    } else {
+        memory.chr_mem = (uint8_t*)malloc(sizeof(uint8_t) * get_chr_banks() * 8192);
+        chr_size = get_chr_banks() * 8192;
+    }
+    // Copy information into the memory
+    int i;
     int offset = 0;
-    debug_print("%s %d\n", "PRG ROM BANKS", gamepack.prg_rom_banks);
-    for (i = 0; i < get_prg_banks(); i++) {
-        for (j = 0; j < 0x8000; j++) {
-            prg_pages[i].data[j] = rom_file[offset];
-            offset++;
-        }
+    uint8_t* rom = get_rom_file();
+    // Load PRG
+    for (i = 0; i < get_prg_banks() * 16384; i++) {
+        memory.prg_mem[i] = rom[i];
+        offset++;
     }
-    for (i = 0; i < get_chr_banks(); i++) {
-        for (j = 0; j < 0x2000; j++) {
-            chr_pages[i].data[j] = rom_file[offset];
-            offset++;
-        }
+    // Load CHR
+    for(i = 0; i < chr_size; i++){
+        memory.chr_mem[i] = rom[offset + i];
     }
-    memory.prg_page = prg_pages;
-    memory.chr_page = chr_pages;
-    init_mmc();
-    if(debug) {
-        int i;
-        for (i = 0; i < 4; i++) {
-            debug_print("0x%02X: 0x%02X 0x%02X 0x%02X 0x%02X\n", 0x8000+(i*4), read(0x8000+(i*4)), read(0x8001+(i*4)), read(0x8002+(i*4)), read(0x8003+(i*4)));
-        }
-        printf("\n");
-        for (i = 0; i < 4; i++) {
-            debug_print("0x%02X: 0x%02X 0x%02X 0x%02X 0x%02X\n", 0xB930+(i*4), read(0xB930+(i*4)), read(0xB931+(i*4)), read(0xB932+(i*4)), read(0xB933+(i*4)));
-        }
-        printf("\n");
-        for (i = 0; i < 4; i++) {
-            debug_print("0x%02X: 0x%02X 0x%02X 0x%02X 0x%02X\n", 0xC000+(i*4), read(0xC000+(i*4)), read(0xC001+(i*4)), read(0xC002+(i*4)), read(0xC003+(i*4)));
-        }
-        printf("\n");
-        for (i = 0; i < 4; i++) {
-            debug_print("0x%02X: 0x%02X 0x%02X 0x%02X 0x%02X\n", 0xF930+(i*4), read(0xF930+(i*4)), read(0xF931+(i*4)), read(0xF932+(i*4)), read(0xF933+(i*4)));
-        }
-    }
+    memory.save_ram = (uint8_t*)malloc(sizeof(uint8_t) * 0x2000);
 }
 
-prg_rom_page get_prg_page(int page) {
-    return memory.prg_page[page];
+
+uint8_t* get_prg_mem() {
+    return memory.prg_mem;
 }
 
-chr_rom_page get_chr_page(int page) {
-    return memory.chr_page[page];
+uint8_t* get_chr_mem() {
+    return memory.chr_mem;
 }
 
-uint16_t normalizeAddress(uint16_t address) {
-    address &= 0xFFFF;
-    if (address >= 0x0000 && address <= 0x1FFF) {
-        return address & 0x07FF;
-    }
-    else if (address >= 0x2000 && address <= 0x3FFF) {
-        return address & 0x2007;
-    }
-    return address;
+uint8_t* get_sys_ram() {
+    return memory.sys_ram;
+}
+
+uint8_t* get_save_ram() {
+    return memory.save_ram;
 }
 
 uint8_t read(uint16_t address) {
-    // Check address range
-    // Normalize
-    // return direct memory
-    if(address >= 0x8000 && address <= 0xFFFF) {
-        return mmc_read(address);
-    } 
-    return memory.memory_location[address];
+    if(address < 0x2000) {
+        return memory.sys_ram[address%0x0800];
+    } else if (address < 0x4000) {
+        return 0; // READ PPU REGISTERS
+    } else if (address >= 0x6000) {
+        return mmc_read(address); // READ MAPPER STUFF!!
+    }
+    return 0;
 }
 
 uint16_t read_short(uint16_t address) {
     return (uint16_t)((read(address + 1) << 8) | read(address));
 }
 
+// Emulates a bug in the 6502 addressing
 uint16_t read_short_bad(uint16_t address) {
     uint16_t a = address;
     uint16_t b = (a & 0xFF00) | (uint16_t)((uint8_t)(a+1));
@@ -94,13 +71,21 @@ uint16_t read_short_bad(uint16_t address) {
 }
 
 void write(uint16_t address, uint8_t value) {
-    if(address >= 0x8000 && address <= 0xFFFF) {
-        mmc_write(address, value);
-        return;
-    } 
-    uint16_t n_addr = normalizeAddress(address);
-    if (n_addr >= 0x2000 && n_addr <= 0x2007) {
+    if (address < 0x2000) {
+        memory.sys_ram[address%0x0800] = value;
+    } else if (address < 0x4000) {
+        ppu_write(0x2000 + address%8, value);
+    } else if (address == 0x4014) {
         ppu_write(address, value);
+    } else if (address >= 0x6000) {
+        mmc_write(address, value);
     }
-    memory.memory_location[address] = value;
+}
+
+void memory_dump() {
+    FILE* file = fopen( "mem_dump.bin", "wb" );
+    fwrite( memory.sys_ram, sizeof(uint8_t), 2048, file);
+    file = freopen("mem_dump.bin", "ab", file);
+    fwrite( memory.save_ram, sizeof(uint8_t), 0x2000, file);
+    fclose(file);
 }

@@ -1,6 +1,6 @@
 #include "cpu.h"
 
-
+static int NOP_count = 0;
 // Names of all ops
 static const char *instruction_names[256] = {
     "BRK", "ORA", "KIL", "SLO", "NOP", "ORA", "ASL", "SLO",
@@ -137,8 +137,8 @@ void init_cpu() {
 
     // http://forum.6502.org/viewtopic.php?t=1708
     cpu.PC = 0;
-    //cpu.PC = read_short(0xFFFC);
-    cpu.PC = 0xC000;
+    cpu.PC = read_short(0xFFFC);
+    //cpu.PC = 0xC000;
 
     cpu.S = 0xFD;
     cpu.carry = 0;
@@ -792,6 +792,16 @@ int cpu_tick() {
     step_data->mode = mode;
     step_data->opcode = opcode;
     function_array[opcode](step_data);
+    if (strcmp(instruction_names[opcode], "NOP")) {
+        NOP_count = 0;
+    } else {
+        NOP_count++;
+    }
+
+    if (NOP_count >= 10) {
+        debug_print("%s", "NOP COUNT OF 4 FOUND! EXITING!");
+        exit(0);
+    }
     free(step_data);
     return cpu.cycles - cycles;
 }

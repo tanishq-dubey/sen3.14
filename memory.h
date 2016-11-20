@@ -14,11 +14,12 @@ typedef struct {
 } chr_rom_page;
 
 typedef struct memory_t {
-   uint8_t *memory_location;
    uint8_t ppu_register_six_write;
    uint8_t ppu_register_five_write;
-   prg_rom_page* prg_page;
-   chr_rom_page* chr_page;
+   uint8_t* prg_mem;
+   uint8_t* chr_mem;
+   uint8_t* sys_ram;
+   uint8_t* save_ram;
 } memory_t;
 
 
@@ -29,7 +30,12 @@ uint8_t read(uint16_t address);
 uint16_t read_short(uint16_t address);
 uint16_t read_short_bad(uint16_t address);
 void write(uint16_t address, uint8_t value);
-prg_rom_page get_prg_page(int page);
-chr_rom_page get_chr_page(int page);
+
+uint8_t* get_prg_mem();
+uint8_t* get_chr_mem();
+uint8_t* get_sys_ram();
+uint8_t* get_save_ram();
+
+void memory_dump();
 
 #endif /* MEMORY_H */

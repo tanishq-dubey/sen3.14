@@ -22,5 +22,6 @@ uint8_t* get_rom_file();
 uint8_t get_prg_banks();
 uint8_t get_chr_banks();
 uint8_t get_mapper();
+void set_mirror_mode(uint8_t value);
 
 #endif /* GAME_C */

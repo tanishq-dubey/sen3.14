@@ -20,7 +20,7 @@ $(MAIN): $(OBJS)
 	$(CC) $(CFLAGS) $(INCLUDES) -c $<  -o $@
 
 clean:
-	$(RM) *.o *~ $(MAIN)
+	$(RM) *.o *~ $(MAIN) mem_dump.bin
 
 depend: $(SRCS)
 	makedepend $(INCLUDES) $^

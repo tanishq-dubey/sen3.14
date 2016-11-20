@@ -58,6 +58,8 @@ void ppu_write(uint16_t address, uint8_t value)
     } 
     else if (address == 0x2007) {
         write_VRAMDATA(value);
+    } else if (address == 0x4014) {
+    	write_OAMDMA(value);
     }
 }
 
@@ -161,4 +163,8 @@ void write_VRAMDATA(uint8_t value)
 	{
 		PPUADDR += 1;
 	}
+}
+
+void write_OAMDMA(uint8_t value) {
+	OAMDMA = value;
 }

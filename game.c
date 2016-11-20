@@ -45,3 +45,11 @@ uint8_t get_chr_banks() {
 uint8_t get_mapper() {
     return gamepack.mapper_mode;
 }
+
+void set_mirror_mode(uint8_t value) {
+    gamepack.mirror_mode = value;
+}
+
+uint8_t get_mirror_mode() {
+    return gamepack.mirror_mode;
+}
