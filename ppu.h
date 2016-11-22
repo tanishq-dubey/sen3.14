@@ -24,14 +24,32 @@ uint8_t x_offset;
 uint8_t y_offset;
 
 bool addr_write;
+bool even_frame;
 
 unsigned long ppu_cycles;
+int scanline;
+int end_scanline;
+int col;
+bool VBlank; 
+bool spriteOn;
+bool bgOn;
+
+//https://wiki.nesdev.com/w/images/d/d1/Ntsc_timing.png
+int loopyV;
+
+enum {
+    horizontal,
+    vertical,
+    single_screen,
+    four_screen
+} mirroring;
 
 void init_ppu();
 void reset_ppu();
 void ppu_write(uint16_t address, uint8_t value);
 uint8_t ppu_read(uint16_t address);
 void normalize_address(uint16_t address);
+uint16_t mirror_nameTable(uint16_t address);
 
 //getting all the read write info on https://wiki.nesdev.com/w/index.php/PPU_registers#OAMADDR
 
@@ -50,4 +68,9 @@ void write_VRAMADDR(uint8_t value);
 void write_VRAMDATA(uint8_t value);
 void write_OAMDMA(uint8_t value);
 
+void tick();
+void render();
+void render_sprites();
+void render_pixels();
+bool rendering_on();
 #endif
