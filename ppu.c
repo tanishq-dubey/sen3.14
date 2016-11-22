@@ -58,7 +58,11 @@ void init_ppu()
 	end_scanline = 341; //note scanline is one cycle shorter if it's rendering an odd frame
 	col = 0;
 	VBlank = true;
-	
+
+	nameTable_start = 0x2000;
+	attributeTable_start = 0x23C0;
+	patternTable_start = 0x0000;
+
 	PPU_VRAM_MEMORY = (uint8_t*)malloc(sizeof(uint8_t)*0x10000);
 	PPU_OAM_MEMORY = (uint8_t*)malloc(sizeof(uint8_t)*256);
 
@@ -362,7 +366,7 @@ void tick()
 	if(VBlank && (PPUCTRL >> 7) & 0x01)
 		cpu.set_nmi();
 	else
-		reset_nmi();
+		reset_nmi(); //TODO: Way to reset the nmi interrupt flag
 
 	if(scanline >= 0 && scanline < 240 && rendering_on())
 	{
@@ -408,7 +412,7 @@ void render()
 
 	}
 	//data for each tile fetched
-	else if(col >= 1 && col <= 256)
+	else if(col >= 1 && col <= 256 && rendering_on())
 	{
 		fetchbg();
 	}
@@ -418,7 +422,7 @@ void render()
 
 	}
 	//first two tiles for next scanline fetched
-	else if(col >= 321 && col <= 336)
+	else if(col >= 321 && col <= 336 && rendering_on())
 	{
 		fetchbg();
 	}
@@ -442,27 +446,75 @@ https://wiki.nesdev.com/w/images/d/d1/Ntsc_timing.png
 	switch(col % 8)
 	{
 		case 0:
+			if(col == 256)
+				incLoopyVVert();
+			else
+				incLoopyVHoriz();
 			break;
 		case 1:
 			//fetch ntbyte
+			nameTable = read(nameTable_start + (loopyV & 0x03FF));
 			break;
 		case 2:
 			break;
 		case 3:
 			//fetch attribute byte
+			attributeTable = read(attributeTable_start + (loopyV & 0x03FF));
 			break;
 		case 4:
 			break;
 		case 5:
 			//fetch low bg byte
+			lowByte = read(patternTable_start + nameTable + ((loopyV & 0x7000) >> 12));
 			break;
 		case 6:
 			break;
 		case 7:
 			//fetch high bg byte
+			highByte = read(patternTable_start + nameTable + 8 + ((loopyV & 0x7000) >> 12));
 			break;
 	}
 }
+
+//horizontal and vertical taken from http://wiki.nesdev.com/w/index.php/PPU_scrolling#Wrapping_around
+void incLoopyVVert()
+{
+	if((loopyV & 0x7000) != 0x7000)
+	{
+		loopyV += 0x1000;
+	}
+	else
+	{
+		loopyV &= ~0x7000;
+		int y = (loopyV & 0x03E0) >> 5;
+		if(y == 29)
+		{
+			y = 0;
+			loopyV ^= 0x0800;
+		}
+		else if(y == 31)
+		{
+			y = 0;
+		}
+		else
+		{
+			y++;
+		}
+		loopy = (loopy & ~0x03E0) | (y << 5);
+	}
+}
+
+void incLoopyVHoriz()
+{
+	if((loopyV & 0x001F) == 31)
+	{
+		loopyV &= 0x001F;
+		loopyV ^= 0x0400;
+	}
+	else
+		loopyV++;
+}
+
 void render_sprite()
 {
 	//https://wiki.nesdev.com/w/index.php/PPU_sprite_evaluation

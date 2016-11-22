@@ -36,6 +36,13 @@ bool bgOn;
 
 //https://wiki.nesdev.com/w/images/d/d1/Ntsc_timing.png
 int loopyV;
+uint16_t nameTable_start;
+uint16_t attributeTable_start;
+uint16_t patternTable_start;
+uint8_t nameTable;
+uint8_t attributeTable;
+uint8_t lowByte;
+uint8_t highByte;
 
 enum {
     horizontal,
