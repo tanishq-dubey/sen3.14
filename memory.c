@@ -50,7 +50,7 @@ uint8_t read(uint16_t address) {
     if(address < 0x2000) {
         return memory.sys_ram[address%0x0800];
     } else if (address < 0x4000) {
-        return 0; // READ PPU REGISTERS
+        return ppu_read(address); // READ PPU REGISTERS
     } else if (address >= 0x6000) {
         return mmc_read(address); // READ MAPPER STUFF!!
     }

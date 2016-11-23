@@ -54,21 +54,19 @@ void init_ppu()
 
 	ppu_cycles = 0;
 
-	PPU_VRAM_MEMORY = (uint8_t*)malloc(sizeof(uint8_t)*0x10000);
-	PPU_OAM_MEMORY = (uint8_t*)malloc(sizeof(uint8_t)*256);
+	PPU_VRAM_MEMORY = (uint8_t*)calloc(sizeof(uint8_t)*0x4000);
+	PPU_OAM_MEMORY = (uint8_t*)calloc(sizeof(uint8_t)*256);
 
-	if(debug)
-	{
-		debug_print("%s","\033[32;1mPPU Register Data:\033[0m\n");
-        debug_print("0x2000: 0x%02x\n", PPUCTRL);
-        debug_print("0x2001: 0x%02x\n", PPUMASK);
-        debug_print("0x2002: 0x%02x\n", PPUSTATUS);
-        debug_print("0x2003: 0x%02x\n", OAMADDR);
-        debug_print("0x2004: 0x%02x\n", OAMDATA);
-        debug_print("0x2005: 0x%02x\n", PPUSCROLL);
-        debug_print("0x2006: 0x%02x\n", PPUADDR);
-        debug_print("0x2007: 0x%02x\n", PPUDATA);
-	}
+	debug_print("%s","\033[32;1mPPU Register Data:\033[0m\n");
+    debug_print("0x2000: 0x%02x\n", PPUCTRL);
+    debug_print("0x2001: 0x%02x\n", PPUMASK);
+    debug_print("0x2002: 0x%02x\n", PPUSTATUS);
+    debug_print("0x2003: 0x%02x\n", OAMADDR);
+    debug_print("0x2004: 0x%02x\n", OAMDATA);
+    debug_print("0x2005: 0x%02x\n", PPUSCROLL);
+    debug_print("0x2006: 0x%02x\n", PPUADDR);
+    debug_print("0x2007: 0x%02x\n", PPUDATA);
+
 } 
 
 uint8_t ppu_read(uint16_t address)
