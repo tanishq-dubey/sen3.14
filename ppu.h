@@ -80,4 +80,8 @@ void render();
 void render_sprites();
 void render_pixels();
 bool rendering_on();
+
+void fetchbg();
+void incLoopyVVert();
+void incLoopyVHoriz();
 #endif

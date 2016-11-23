@@ -246,6 +246,10 @@ void set_irq() {
     cpu.interrupt = irq_interrupt;
 }
 
+void reset_nmi() {
+    cpu.interrupt = 0;
+}
+
 void do_nmi() {
     push_short(cpu.PC);
     push(generate_flags() | 0x10);

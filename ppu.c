@@ -36,37 +36,37 @@ static unsigned char nes_palette[64][3] =
 
 void init_ppu()
 {
-	//powerup state found at https://wiki.nesdev.com/w/index.php/PPU_power_up_state#Best_practice
-	PPUCTRL = 0;
-	PPUMASK = 0;
-	PPUSTATUS = 0x80;
-	OAMADDR = 0;
-	OAMDATA = 0;
-	PPUSCROLL = 0;
-	PPUADDR = 0;
-	PPUDATA = 0;
+    //powerup state found at https://wiki.nesdev.com/w/index.php/PPU_power_up_state#Best_practice
+    PPUCTRL = 0;
+    PPUMASK = 0;
+    PPUSTATUS = 0x80;
+    OAMADDR = 0;
+    OAMDATA = 0;
+    PPUSCROLL = 0;
+    PPUADDR = 0;
+    PPUDATA = 0;
 
-	x_or_y_scroll = true;
-	x_offset = 0;
-	y_offset = 0;
+    x_or_y_scroll = true;
+    x_offset = 0;
+    y_offset = 0;
 
-	addr_write = true;
-	even_frame = true;
+    addr_write = true;
+    even_frame = true;
 
-	ppu_cycles = 0;
-	scanline = -1;
-	end_scanline = 341; //note scanline is one cycle shorter if it's rendering an odd frame
-	col = 0;
-	VBlank = true;
+    ppu_cycles = 0;
+    scanline = -1;
+    end_scanline = 341; //note scanline is one cycle shorter if it's rendering an odd frame
+    col = 0;
+    VBlank = true;
 
-	nameTable_start = 0x2000;
-	attributeTable_start = 0x23C0;
-	patternTable_start = 0x0000;
+    nameTable_start = 0x2000;
+    attributeTable_start = 0x23C0;
+    patternTable_start = 0x0000;
 
-	PPU_VRAM_MEMORY = (uint8_t*)calloc(sizeof(uint8_t)*0x4000);
-	PPU_OAM_MEMORY = (uint8_t*)calloc(sizeof(uint8_t)*256);
+    PPU_VRAM_MEMORY = (uint8_t*)malloc(sizeof(uint8_t)*0x4000);
+    PPU_OAM_MEMORY = (uint8_t*)malloc(sizeof(uint8_t)*256);
 
-	debug_print("%s","\033[32;1mPPU Register Data:\033[0m\n");
+    debug_print("%s","\033[32;1mPPU Register Data:\033[0m\n");
     debug_print("0x2000: 0x%02x\n", PPUCTRL);
     debug_print("0x2001: 0x%02x\n", PPUMASK);
     debug_print("0x2002: 0x%02x\n", PPUSTATUS);
@@ -82,16 +82,16 @@ uint8_t ppu_read(uint16_t address)
 {
 	if(address < 0x2000)
 	{
-		return memory.get_chr_mem()[address];
+		return get_chr_mem()[address];
 	}
 	if(address == 0x2002) {
-		return read_STATUS;
+		return read_STATUS();
 	}
 	else if(address == 0x2004) {
-		return read_OAMDATA;
+		return read_OAMDATA();
 	}
 	else if(address == 0x2007) {
-		return read_VRAMDATA;
+		return read_VRAMDATA();
 	}
 
 	return PPU_VRAM_MEMORY[normalize_address(address)];
@@ -136,7 +136,7 @@ uint8_t read(uint16_t address)
 {
 	if(address < 0x2000)
 	{
-		return memory.get_chr_mem()[address];
+		return get_chr_mem()[address];
 	}
 	return PPU_VRAM_MEMORY[normalize_address(address)];
 }
@@ -362,7 +362,7 @@ bool rendering_on()
 void tick()
 {
 	if(VBlank && (PPUCTRL >> 7) & 0x01)
-		cpu.set_nmi();
+		set_nmi();
 	else
 		reset_nmi(); //TODO: Way to reset the nmi interrupt flag
 
