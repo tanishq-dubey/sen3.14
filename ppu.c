@@ -39,7 +39,7 @@ void init_ppu()
 	//powerup state found at https://wiki.nesdev.com/w/index.php/PPU_power_up_state#Best_practice
 	PPUCTRL = 0;
 	PPUMASK = 0;
-	PPUSTATUS = 0;
+	PPUSTATUS = 0x80;
 	OAMADDR = 0;
 	OAMDATA = 0;
 	PPUSCROLL = 0;
@@ -51,8 +51,17 @@ void init_ppu()
 	y_offset = 0;
 
 	addr_write = true;
+	even_frame = true;
 
 	ppu_cycles = 0;
+	scanline = -1;
+	end_scanline = 341; //note scanline is one cycle shorter if it's rendering an odd frame
+	col = 0;
+	VBlank = true;
+
+	nameTable_start = 0x2000;
+	attributeTable_start = 0x23C0;
+	patternTable_start = 0x0000;
 
 	PPU_VRAM_MEMORY = (uint8_t*)calloc(sizeof(uint8_t)*0x4000);
 	PPU_OAM_MEMORY = (uint8_t*)calloc(sizeof(uint8_t)*256);
@@ -71,6 +80,10 @@ void init_ppu()
 
 uint8_t ppu_read(uint16_t address)
 {
+	if(address < 0x2000)
+	{
+		return memory.get_chr_mem()[address];
+	}
 	if(address == 0x2002) {
 		return read_STATUS;
 	}
@@ -81,12 +94,16 @@ uint8_t ppu_read(uint16_t address)
 		return read_VRAMDATA;
 	}
 
-	return 0x00;
+	return PPU_VRAM_MEMORY[normalize_address(address)];
 }
 
 void ppu_write(uint16_t address, uint8_t value)
 {
-	if(address == 0x2000) {
+	if(address < 0x2000)
+	{
+		memory.get_chr_mem()[address] = value;
+	}
+	else if(address == 0x2000) {
 		write_CTRL(value);
 	}
 	else if(address == 0x2001) {
@@ -109,6 +126,31 @@ void ppu_write(uint16_t address, uint8_t value)
     } else if (address == 0x4014) {
     	write_OAMDMA(value);
     }
+    else
+    {
+    	PPU_VRAM_MEMORY[normalize_address(address)] = value;
+    }
+}
+
+uint8_t read(uint16_t address)
+{
+	if(address < 0x2000)
+	{
+		return memory.get_chr_mem()[address];
+	}
+	return PPU_VRAM_MEMORY[normalize_address(address)];
+}
+
+void write(uint16_t address, uint8_t value)
+{
+	if(address < 0x2000)
+	{
+		memory.get_chr_mem()[address] = value;
+	}
+    else
+    {
+    	PPU_VRAM_MEMORY[normalize_address(address)] = value;
+    }
 }
 
 void reset_ppu()
@@ -125,7 +167,7 @@ void reset_ppu()
 void normalize_address(uint16_t address)
 {
 	address &= 0x3FFF; //any address above 0x3FFF wraps around
-	
+	address = mirror_nameTable(address);
 	//address 0x3000 to 0x3EFF are mirrors of 0x2000 to 0x2EFF
 	if(address >= 0x3000 && address <= 0x3EFF)
 	{
@@ -169,6 +211,39 @@ void normalize_address(uint16_t address)
 	}
 }
 
+uint16_t mirror_nameTable(uint16_t address)
+{
+	switch(WAY TO GET NAMETABLE MIRRORING) //TODO: finish code here
+	{
+		case horizontal:
+			if(address >= 0x2400 && address <= 0x27FF)
+			{
+				return address - 0x0400;
+			}
+			else if (address >= 0x2C00 && address <= 0x2FFF)
+		    {
+		        return address - 0x0400;
+		    }
+		break;
+		case vertical:
+			if(address >= 0x2800 && address <= 0x2FFF)
+			{
+				return address - 0x0800;
+			}
+		break;
+		case single_screen:
+			if (address >= 0x2000 && address <= 0x2FFF)
+      		{
+        		return (address & 0x03FF) | 0x2000;
+      		}
+      	break;
+		case four_screen:
+		break;
+	}
+
+	return address;
+}
+
 uint8_t read_STATUS()
 {
 	uint8_t data = PPUSTATUS;
@@ -206,6 +281,19 @@ void write_CTRL(uint8_t value)
 void write_MASK(uint8_t value)
 {
 	PPUMASK = value;
+	if((value >> 3) & 0x01)
+	{
+		bgOn = true;
+	}
+	else
+		bgOn = false;
+
+	if((value >> 4) & 0x01)
+	{
+		spriteOn = true;
+	}
+	else spriteOn = false;
+
 }
 
 void write_OAMADDR(uint8_t addr)
@@ -264,3 +352,178 @@ void write_VRAMDATA(uint8_t value)
 void write_OAMDMA(uint8_t value) {
 	OAMDMA = value;
 }
+
+bool rendering_on()
+{
+	return spriteOn || bgOn;
+}
+
+//https://wiki.nesdev.com/w/index.php/PPU_rendering
+void tick()
+{
+	if(VBlank && (PPUCTRL >> 7) & 0x01)
+		cpu.set_nmi();
+	else
+		reset_nmi(); //TODO: Way to reset the nmi interrupt flag
+
+	if(scanline >= 0 && scanline < 240 && rendering_on())
+	{
+		render();
+	}
+
+	col++;
+
+	//new scanline! 
+	if(col == end_scanline)
+	{
+		if(even_frame)
+			end_scanline = 341;
+		else
+			end_scanline = 340;
+
+		col = 0;
+		scanline++;
+
+		switch(scanline)
+		{
+			case 261:
+				scanline = -1;
+				even_frame = !even_frame;
+				VBlank = false;
+				PPUSTATUS &= 0x70; //set vblank flag as 0
+			break;
+
+			case 241:
+				VBlank = true;
+				PPUSTATUS |= 0x80; //set vblank flag as 1
+			break;
+		}
+	}
+}
+
+void render()
+{
+	//https://wiki.nesdev.com/w/index.php/PPU_rendering
+	//idle cycle
+	if(col == 0)
+	{
+
+	}
+	//data for each tile fetched
+	else if(col >= 1 && col <= 256 && rendering_on())
+	{
+		fetchbg();
+	}
+	//data for sprites on next scanline fetched
+	else if(col >= 257 && col <= 320)
+	{
+
+	}
+	//first two tiles for next scanline fetched
+	else if(col >= 321 && col <= 336 && rendering_on())
+	{
+		fetchbg();
+	}
+	//two bytes fetched but unknown??
+	else if(col >= 337 && col <= 340)
+	{
+
+	}
+}
+
+void fetchbg()
+{
+	/*Conceptually, the PPU does this 33 times for each scanline:
+Fetch a nametable entry from $2000-$2FBF.
+Fetch the corresponding attribute table entry from $23C0-$2FFF and increment the current VRAM address within the same row.
+Fetch the low-order byte of an 8x1 pixel sliver of pattern table from $0000-$0FF7 or $1000-$1FF7.
+Fetch the high-order byte of this sliver from an address 8 bytes higher.
+Turn the attribute data and the pattern table data into palette indices, and combine them with data from sprite data using priority.
+https://wiki.nesdev.com/w/images/d/d1/Ntsc_timing.png
+*/
+	switch(col % 8)
+	{
+		case 0:
+			if(col == 256)
+				incLoopyVVert();
+			else
+				incLoopyVHoriz();
+			break;
+		case 1:
+			//fetch ntbyte
+			nameTable = read(nameTable_start + (loopyV & 0x03FF));
+			break;
+		case 2:
+			break;
+		case 3:
+			//fetch attribute byte
+			attributeTable = read(attributeTable_start + (loopyV & 0x03FF));
+			break;
+		case 4:
+			break;
+		case 5:
+			//fetch low bg byte
+			lowByte = read(patternTable_start + nameTable + ((loopyV & 0x7000) >> 12));
+			break;
+		case 6:
+			break;
+		case 7:
+			//fetch high bg byte
+			highByte = read(patternTable_start + nameTable + 8 + ((loopyV & 0x7000) >> 12));
+			break;
+	}
+}
+
+//horizontal and vertical taken from http://wiki.nesdev.com/w/index.php/PPU_scrolling#Wrapping_around
+void incLoopyVVert()
+{
+	if((loopyV & 0x7000) != 0x7000)
+	{
+		loopyV += 0x1000;
+	}
+	else
+	{
+		loopyV &= ~0x7000;
+		int y = (loopyV & 0x03E0) >> 5;
+		if(y == 29)
+		{
+			y = 0;
+			loopyV ^= 0x0800;
+		}
+		else if(y == 31)
+		{
+			y = 0;
+		}
+		else
+		{
+			y++;
+		}
+		loopy = (loopy & ~0x03E0) | (y << 5);
+	}
+}
+
+void incLoopyVHoriz()
+{
+	if((loopyV & 0x001F) == 31)
+	{
+		loopyV &= 0x001F;
+		loopyV ^= 0x0400;
+	}
+	else
+		loopyV++;
+}
+
+void render_sprite()
+{
+	//https://wiki.nesdev.com/w/index.php/PPU_sprite_evaluation
+	if((PPUCTRL >> 5) & 0x01)
+	{
+		//render_8by16
+	}
+}
+
+void render_pixel()
+{
+
+}
+

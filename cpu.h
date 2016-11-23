@@ -75,4 +75,6 @@ void reset_cpu();
 int cpu_tick();
 uint16_t get_pc();
 
+void set_nmi();
+
 #endif
