@@ -319,5 +319,95 @@ void ppu_tick(uint16_t cycles) {
 }
 
 void render_to_buffer() {
-    
+    if ((ppu.PPUMASK & (0x10 | 0x08)) == 0) {
+        return;
+    }
+    // render sprites with background priority
+    // render background colors
+    // render all foreground sprites
+
+    // render_sprites(0x20);
+    // render_background();
+    // render_sprites(0);
+}
+
+
+void render_sprite(uint8_t bg_priority) {
+    if (ppu.PPUCTRL & 0x20) {
+        render_16_sprite(bg_priority);
+    } else {
+        render_8_sprite(bg_priority);
+    }
+}
+
+void render_8_sprite(uint8_t bg_priority) {
+    uint16_t p_table_addr;
+    uint8_t p_plane_1, p_plane_2;
+    uint8_t palette_idx, palette_ub;
+    uint8_t spt_x, spt_y, spt_attr;
+    uint8_t in_range, tile_idx;
+
+    ppu.sprite_scanline = 0;
+
+    if (ppu.PPUCTRL & 0x08) {
+        p_table_addr = PATTERNTABLE_ADDR_1;
+    } else {
+        p_table_addr = PATTERNTABLE_ADDR_0;
+    }
+
+    int spriteN;
+    for(spriteN = SPRITE_MEM_FIRST; spriteN >=0; spriteN -= SPRITE_MEM_SIZE) {
+        tile_idx = ppu.spram[spriteN + 1];
+        spt_attr = ppu.spram[spriteN + 2];
+        spt_x = ppu.spram[spriteN + 3];
+        spt_y = ppu.spram[spriteN] + 1;
+
+        if (ppu.spram[spriteN] == 239) {
+            ppu.PPUSTATUS |= 0x20;
+        } else if (ppu.spram[spriteN] == 255) {
+            ppu.PPUSTATUS &= ~0x20;
+        }
+        
+        if (bg_priority != (spt_attr & 0x20)) {
+            continue;
+        }
+
+        in_range = ppu.scanline - spt_y;
+
+        if (in_range < 8) {
+            if (ppu.sprite_scanline++ >= 8) {
+                ppu.PPUSTATUS |= 0x20;
+            }
+            if (spt_attr & 0x80) {
+                in_range ^= 0x07;
+            }
+
+            p_plane_1 = ppu_read(p_table_addr + (tile_idx << 4) + in_range);
+            p_plane_2 = ppu_read(p_table_addr + (tile_idx << 4) + in_range + 8);
+            palette_ub = (spt_attr & 0x03) << 2;
+
+            int p_num = 0;
+            for (p_num = 0; p_num < 8; p_num++) {
+                palette_idx = palette_ub;
+
+                if (spt_attr & 0x40) {
+                    palette_idx |= p_plane_1 & (0x01 << p_num) ? 0x1 : 0;
+                    palette_idx |= p_plane_2 & (0x01 << p_num) ? 0x2 : 0;
+                } else {
+                    palette_idx |= p_plane_1 & (0x80 << p_num) ? 0x1 : 0;
+                    palette_idx |= p_plane_2 & (0x80 << p_num) ? 0x2 : 0;
+                }
+
+                if ((palette_idx & 0x3) == 0) {
+                    // do nothing
+                } else {
+                    if (spriteN == SPRITE_ZERO_VAL && (ppu.PPUMASK & 0x10) && (ppu.PPUMASK & 0x08)) {
+                        // check if transparent pixel on SDL
+                        // ppu.PPUSTATUS |= 0x40;
+                    }
+                }
+                // renderer set pixel
+            }
+        }
+    }
 }

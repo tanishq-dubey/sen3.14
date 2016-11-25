@@ -118,5 +118,10 @@ void ppu_tick(uint16_t cycles);
 
 // TODO: Rendering functions
 void render_to_buffer();
+void render_sprite(uint8_t bg_priority);
+
+// Sprite helper functions
+void render_8_sprite(uint8_t bg_priority);
+void render_16_sprite(uint8_t bg_priority);
 
 #endif
