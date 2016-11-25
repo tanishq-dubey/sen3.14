@@ -82,6 +82,9 @@ typedef struct ppu_t {
     unsigned long ppu_cycle;
     uint16_t scanline;
     uint16_t prev_scanline;
+
+    bool transfer_latch;
+    bool transfer_latch_scroll;
 } ppu_t;
 
 // Static PPU declared
@@ -111,8 +114,9 @@ uint8_t read_VRAMDATA();
 // PPU initalization and runtime
 void ppu_init();
 void reset_ppu();
-void ppu_tick(uint8_t cycles);
+void ppu_tick(uint16_t cycles);
 
 // TODO: Rendering functions
+void render_to_buffer();
 
 #endif

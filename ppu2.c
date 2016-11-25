@@ -59,10 +59,14 @@ void init_ppu() {
     ppu.scanline  = ppu.prev_scanline = SCANLINE_INIT;
     ppu.ppu_cycle = 0;
 
+    ppu.vram_access_flip = false;
+    ppu.vram_data_latch = 0;
+
     // TODO: initalize any GL/SDL renderer here
     int i;
+    int j = 0;
     for(i = 0; i < 32; i++) {
-        //ppu_write(PALETTE_BACK_ADDR + i++, default_palette[i]);
+        ppu_write(PALETTE_BACK_ADDR + j++, default_palette[i]);
     }
 }
 
@@ -262,4 +266,58 @@ void write_OAMDMA(uint8_t value) {
         i++;
     }
     ppu.ppu_cycle += PPU_DMA_CYCLES * PER_CPU_CYCLE;
+}
+
+void ppu_tick(uint16_t cycles) {
+    debug_print("CYC: %ld SL: %d\n", ppu.ppu_cycle, ppu.scanline);
+
+    uint16_t ppu_ins_cycles = cycles * PER_CPU_CYCLE;
+    ppu.ppu_cycle += ppu_ins_cycles;
+    if (ppu.ppu_cycle >= PPU_PER_SCANL) {
+        ppu.scanline += ppu.ppu_cycle / PPU_PER_SCANL;
+        ppu.ppu_cycle = ppu.ppu_cycle % PPU_PER_SCANL;
+    }
+
+    if(ppu.scanline >= SCANLINE_R_START && ppu.scanline <= SCANLINE_R_END) {
+        if (!ppu.transfer_latch && ((ppu.PPUMASK & 0x10) || (ppu.PPUMASK & 0x08))) {
+            ppu.vram_addr = ppu.vram_latch;
+            ppu.transfer_latch = true;
+        }
+
+        if (ppu.scanline != ppu.prev_scanline) {
+            //render_to_buffer();
+            ppu.prev_scanline = ppu.scanline;
+            if (!ppu.transfer_latch && ((ppu.PPUMASK & 0x10) || (ppu.PPUMASK & 0x08))) {
+                ppu.vram_addr = (ppu.vram_addr & (~0x1F & ~(1 << 10))) | (ppu.vram_latch & (0x1F | (1 <<10)));
+                //mapper tick for irq?
+            }
+        }
+    } else if (ppu.scanline == SCANLINE_VB_START) {
+        if (!ppu.VBlank) {
+            ppu.VBlank = true;
+            ppu.PPUSTATUS |= 0x80;
+        }
+    } else if (ppu.scanline > SCANLINE_F_END) {
+        ppu.PPUSTATUS &= ~0x20;
+        ppu.PPUSTATUS &= ~0x40;
+        // update_screen();
+        ppu.transfer_latch = false;
+        ppu.transfer_latch_scroll = false;
+        ppu.nmi = false;
+        ppu.scanline = ppu.prev_scanline = 0;
+    } else if (ppu.scanline > SCANLINE_VB_END) {
+        if (ppu.VBlank) {
+            ppu.VBlank = false;
+            ppu.PPUSTATUS &= ~0x80;
+        }
+    }
+
+    if (ppu.VBlank && ppu.nmi && (ppu.PPUCTRL & 0x80) && (ppu.PPUSTATUS & 0x80)) {
+        ppu.nmi = true;
+        set_nmi();
+    }
+}
+
+void render_to_buffer() {
+    
 }
