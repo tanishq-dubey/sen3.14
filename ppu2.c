@@ -116,3 +116,150 @@ uint16_t normalize_address(uint16_t address) {
     }
     return address;
 }
+
+uint16_t mirror_nameTable(uint16_t address) {
+    switch(mmc_mirror()){
+        case Horizontal:
+            if(address >= 0x2400 && address <= 0x27FF) {
+                return address - 0x0400;
+            } else if (address >= 0x2800 && address <= 0x2BFF) {
+                return address - 0x0400;
+            } else if (address >= 0x2C00 && address <= 0x2FFF) {
+                return address - 0x0800;
+            }
+            break;
+        case Vertical:
+            if (address >= 0x2800 && address <= 0x2FFF) {
+                return address - 0x0800;
+            }
+            break;
+        case SingleScreen:
+        case SingleScreenLowerBank:
+            if (address >= 0x2000 && address <= 0x2FFF) {
+                return (address & 0x03FF) | 0x2000;
+            }
+            break;
+        case SingleScreenUpperBank:
+            if (address >= 0x2000 && address <= 0x2FFF) {
+                return (address & 0x03FF) | 0x2400;
+            }
+            break;
+        case FourScreen:
+            break;
+    }
+    return address;
+}
+
+uint8_t ppu_read_register(uint16_t address) {
+    if(address == 0x2002) {
+	return read_STATUS();
+    } else if(address == 0x2004) {
+        return read_OAMDATA();
+    } else if(address == 0x2007) {
+        return read_VRAMDATA();
+    }
+    return 0;
+}
+
+void ppu_write_register(uint16_t address, uint8_t value) {
+    if(address == 0x2000) {
+        write_CTRL(value);
+    } else if(address == 0x2001) {
+        write_MASK(value);
+    } else if (address == 0x2003) {
+        write_OAMADDR(value);
+    } else if (address == 0x2004) {
+        write_OAMDATA(value);
+    } else if (address == 0x2005) {
+        write_SCROLL(value);
+    } else if (address == 0x2006) {
+        write_VRAMADDR(value);
+    } else if (address == 0x2007) {
+        write_VRAMDATA(value);
+    } else if (address == 0x4014) {
+        write_OAMDMA(value);
+    }
+}
+
+uint8_t read_STATUS() {
+    uint8_t val = ppu.PPUSTATUS;
+    ppu.vram_access_flip = false;
+    ppu.PPUSTATUS &= ~(0x80);
+    return val;
+}
+
+uint8_t read_OAMDATA() {
+    return ppu.spram[ppu.sprite_addr];
+}
+
+uint8_t read_VRAMDATA() {
+    uint8_t val = 0;
+    if ( ppu.vram_addr >= 0x0000 && ppu.vram_addr <= 0x3EFF) {
+        val = ppu.vram_data_latch;
+        ppu.vram_data_latch = ppu_p_read();
+    } else {
+        ppu.vram_data_latch = ppu_read(normalize_address(ppu.vram_addr & (~0x1000)));
+        val = ppu_p_read();
+    }
+    ppu.vram_addr += (ppu.PPUCTRL & 0x04 ? 32 :1);
+    return val;
+}
+
+void write_CTRL(uint8_t value) {
+    ppu.vram_latch = (ppu.vram_latch & ~(3 << 10)) | ((value & 3) << 10);
+    ppu.PPUCTRL = value;
+}
+
+void write_MASK(uint8_t value) {
+    ppu.PPUMASK = value;
+}
+
+void write_OAMADDR(uint8_t value) {
+    ppu.sprite_addr = value;
+}
+
+void write_OAMDATA(uint8_t value) {
+    ppu.spram[ppu.sprite_addr] = value;
+    ppu.sprite_addr++;
+}
+
+void write_SCROLL(uint8_t value) {
+    if (!ppu.vram_access_flip) {
+        ppu.PPUSCROLL = value << 8;
+        ppu.scroll_x = value & 0x07;
+        ppu.vram_latch = (ppu.vram_latch & ~0x1F) | ((value >> 3) & 0x1F);
+    } else {
+        ppu.PPUSCROLL |= value;
+        ppu.scroll_y = value;
+        ppu.vram_latch = (ppu.vram_latch & ~(0x1F <<5)) | (((value >> 3) & 0x1F) << 5);
+        ppu.vram_latch = (ppu.vram_latch & ~(0x07 << 12)) | ((value & 0x07) << 12);
+    }
+    ppu.vram_access_flip = !ppu.vram_data_latch;
+}
+
+void write_VRAMADDR(uint8_t value) {
+    if(!ppu.vram_access_flip) {
+        ppu.vram_addr = value << 8;
+        ppu.vram_latch = (ppu.vram_latch & 0xFF) | ((value & 0x3F) << 8);
+    } else {
+        ppu.vram_latch = (ppu.vram_latch & ~0xFF) | value;
+        ppu.vram_addr = ppu.vram_latch;
+    }
+    ppu.vram_access_flip = !ppu.vram_data_latch;
+}
+
+void write_VRAMDATA(uint8_t value) {
+    ppu_p_write(value);
+    ppu.vram_addr += (ppu.PPUCTRL & 0x04 ? 32 : 1);
+}
+
+void write_OAMDMA(uint8_t value) {
+    uint16_t base_addr = value * PPU_SPRT_RAM_SIZE;
+    int i = 0;
+
+    while(i < PPU_SPRT_RAM_SIZE) {
+        ppu.spram[(ppu.sprite_addr + i) % PPU_SPRT_RAM_SIZE] = read(base_addr + i);
+        i++;
+    }
+    ppu.ppu_cycle += PPU_DMA_CYCLES * PER_CPU_CYCLE;
+}

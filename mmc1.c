@@ -63,16 +63,16 @@ void write_control(uint8_t value) {
 	uint8_t mirror_mode = value & 3;
 	switch(mirror_mode) {
 		case 0:
-			set_mirror_mode(2);
+			mapper_one.mirror_mode_internal = SingleScreenLowerBank;
 			break;
 		case 1:
-			set_mirror_mode(3);
+			mapper_one.mirror_mode_internal = SingleScreenUpperBank;
 			break;
 		case 2:
-			set_mirror_mode(1);
+			mapper_one.mirror_mode_internal = Vertical;
 			break;
 		case 4:
-			set_mirror_mode(0);
+                        mapper_one.mirror_mode_internal = Horizontal;
 			break;
 	}
 	calc_all_offsets();
@@ -154,4 +154,8 @@ void mapper_one_write(uint16_t address, uint8_t value) {
 	} else if (address >= 0x6000) {
 		get_save_ram()[(int)(address) - 0x6000] = value;
 	}
+}
+
+uint8_t mapper_one_mirror() {
+   return mapper_one.mirror_mode_internal; 
 }

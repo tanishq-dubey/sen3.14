@@ -5,6 +5,7 @@
 #include "game.h"
 #include "cpu.h"
 #include "memory.h"
+#include "mmc.h"
 #include <stdbool.h>
 
 // Defines for screen 
@@ -62,11 +63,15 @@ typedef struct ppu_t {
     uint8_t * vram;
     uint8_t * spram;
     uint16_t vram_addr;
+    uint8_t vram_data_latch;
+    uint16_t vram_latch;
+    uint8_t sprite_addr;
 
     uint8_t scroll_x;
     uint8_t scroll_y;
 
     bool VBlank;
+    bool vram_access_flip;
     bool nmi;
     bool ppu_selection;
     bool background_pattern;

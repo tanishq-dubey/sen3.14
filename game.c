@@ -62,5 +62,5 @@ void set_mirror_mode(uint8_t value) {
 }
 
 uint8_t get_mirror_mode() {
-    return gamepack.mirror_mode;
+    return gamepack.mirror_mode; 
 }

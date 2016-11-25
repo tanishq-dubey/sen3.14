@@ -45,9 +45,14 @@ uint8_t mmc_read(uint16_t address) {
     return 0;
 }
 
-uint8_t mmc_mapper() {
+uint8_t mmc_mirror() {
     switch(get_mapper()) {
         case 0:
-            return 
+            return mapper_two_mirror();
+        case 1:
+            return mapper_one_mirror();
+        case 2:
+            return mapper_two_mirror();
     }
+    return 0;
 }

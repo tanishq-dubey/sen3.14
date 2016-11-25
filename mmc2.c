@@ -32,3 +32,15 @@ void mapper_two_write(uint16_t address, uint8_t value) {
 		get_save_ram()[index] = value;
 	}
 }
+
+uint8_t mapper_two_mirror() {
+    if (get_mirror_mode() == Horizontal) {
+        return Horizontal;
+    } else if (get_mirror_mode() == Vertical) {
+        return Vertical;
+    } else if (get_mirror_mode() == FourScreen) {
+        return FourScreen;
+    } else {
+        return SingleScreen;
+    }
+}

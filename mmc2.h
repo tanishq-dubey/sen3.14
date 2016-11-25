@@ -17,6 +17,7 @@ void mapper_two_init();
 void mapper_two_step();
 uint8_t mapper_two_read(uint16_t address);
 void mapper_two_write(uint16_t address, uint8_t value);
+uint8_t mapper_two_mirror();
 
 
 #endif /* MMC_TWO_H */
