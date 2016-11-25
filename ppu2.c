@@ -285,7 +285,7 @@ void ppu_tick(uint16_t cycles) {
         }
 
         if (ppu.scanline != ppu.prev_scanline) {
-            //render_to_buffer();
+            render_to_buffer();
             ppu.prev_scanline = ppu.scanline;
             if (!ppu.transfer_latch && ((ppu.PPUMASK & 0x10) || (ppu.PPUMASK & 0x08))) {
                 ppu.vram_addr = (ppu.vram_addr & (~0x1F & ~(1 << 10))) | (ppu.vram_latch & (0x1F | (1 <<10)));
@@ -300,7 +300,7 @@ void ppu_tick(uint16_t cycles) {
     } else if (ppu.scanline > SCANLINE_F_END) {
         ppu.PPUSTATUS &= ~0x20;
         ppu.PPUSTATUS &= ~0x40;
-        // update_screen();
+        update_screen();
         ppu.transfer_latch = false;
         ppu.transfer_latch_scroll = false;
         ppu.nmi = false;
@@ -326,9 +326,9 @@ void render_to_buffer() {
     // render background colors
     // render all foreground sprites
 
-    // render_sprites(0x20);
-    // render_background();
-    // render_sprites(0);
+    render_sprites(0x20);
+    render_background();
+    render_sprites(0);
 }
 
 
@@ -403,11 +403,205 @@ void render_8_sprite(uint8_t bg_priority) {
                 } else {
                     if (spriteN == SPRITE_ZERO_VAL && (ppu.PPUMASK & 0x10) && (ppu.PPUMASK & 0x08)) {
                         // check if transparent pixel on SDL
-                        // ppu.PPUSTATUS |= 0x40;
+                        ppu.PPUSTATUS |= 0x40;
                     }
                 }
                 // renderer set pixel
             }
         }
     }
+}
+
+void render_16_sprite(uint8_t bg_priority) {
+    uint16_t p_table_addr;
+    uint8_t p_plane_1, p_plane_2;
+    uint8_t palette_idx, palette_ub;
+    uint8_t spt_x, spt_y, spt_attr;
+    uint8_t in_range, tile_idx;
+
+    ppu.sprite_scanline = 0;
+
+    int spriteN;
+    for(spriteN = SPRITE_MEM_FIRST; spriteN >=0; spriteN -= SPRITE_MEM_SIZE) {
+        tile_idx = ppu.spram[spriteN + 1];
+        spt_attr = ppu.spram[spriteN + 2];
+        spt_x = ppu.spram[spriteN + 3];
+        spt_y = ppu.spram[spriteN] + 1;
+        int sprite_id = tile_idx;
+
+        if (ppu.spram[spriteN] == 239) {
+            ppu.PPUSTATUS |= 0x20;
+        } else if (ppu.spram[spriteN] == 255) {
+            ppu.PPUSTATUS &= ~0x20;
+        }
+        
+        if (bg_priority != (spt_attr & 0x20)) {
+            continue;
+        }
+
+        in_range = ppu.scanline - spt_y;
+
+        if (spt_attr & 0x80) {
+            in_range = spt_y + 15 - ppu.scanline;
+        }
+
+        if (in_range < 16) {
+            if (in_range < 8) {
+                if (sprite_id % 2 == 0) {
+                    p_table_addr = 0x0000;
+                } else {
+                    p_table_addr = 0x1000;
+                    tile_idx -= 1;
+                }
+            } else {
+                in_range += 8;
+                if (sprite_id % 2 == 0) {
+                    p_table_addr = 0x0000;
+                    tile_idx += 1;
+                } else {
+                    p_table_addr = 0x1000;
+                    tile_idx -= 1;
+                }
+            }
+
+            p_plane_1 = ppu_read(p_table_addr + (tile_idx << 4) + in_range);
+            p_plane_2 = ppu_read(p_table_addr + (tile_idx << 4) + in_range + 8);
+            palette_ub = (spt_attr & 0x03) << 2;
+
+            int p_num = 0;
+            for (p_num = 0; p_num < 8; p_num++) {
+                palette_idx = palette_ub;
+
+                if (spt_attr & 0x40) {
+                    palette_idx |= p_plane_1 & (0x01 << p_num) ? 0x1 : 0;
+                    palette_idx |= p_plane_2 & (0x01 << p_num) ? 0x2 : 0;
+                } else {
+                    palette_idx |= p_plane_1 & (0x80 << p_num) ? 0x1 : 0;
+                    palette_idx |= p_plane_2 & (0x80 << p_num) ? 0x2 : 0;
+                }
+
+                if ((palette_idx & 0x3) == 0) {
+                    // do nothing
+                } else {
+                    if (spriteN == SPRITE_ZERO_VAL && (ppu.PPUMASK & 0x10) && (ppu.PPUMASK & 0x08)) {
+                        // check if transparent pixel on SDL
+                        ppu.PPUSTATUS |= 0x40;
+                    }
+                }
+                // renderer set pixel
+            }
+        }
+    }
+}
+
+void render_background() {
+    uint16_t n_table_addr, p_table_addr, attr_table_addr, tile_addr, attr_addr;
+    uint8_t attr_val, tile_idx, group_idx, palette_idx;
+    uint8_t p_plane_1, p_plane_2, palette_ub;
+    uint8_t tile_x, tile_y, tile_s_x, tile_s_y;
+
+    if (ppu.PPUCTRL & 0x10) {
+        p_table_addr = 0x1000;
+    } else {
+        p_table_addr = 0x0000;
+    }
+
+    int tile_n;
+    for(tile_n = 0; tile_n < NAMETABLE_WIDTH; tile_n++) {
+        switch ((ppu.vram_addr >> 10) & 0x03) {
+            case 0:
+                n_table_addr = 0x2000;
+                break;
+            case 1:
+                n_table_addr = 0x2400;
+                break;
+            case 2:
+                n_table_addr = 0x2800;
+                break;
+            case 3:
+                n_table_addr = 0x2C00;
+                break;
+        }
+
+        attr_table_addr = n_table_addr + 0x03C0;
+        tile_x = ppu.vram_addr & 0x1F;
+        tile_y = (ppu.vram_addr >> 5) & 0x1F;
+        tile_s_x = ppu.scroll_x;
+        tile_s_y = (ppu.vram_addr >> 12) & 0x07;
+        tile_addr = n_table_addr | (ppu.vram_addr & 0x03FF);
+
+        int pixel_n;
+        for (pixel_n = 0; pixel_n < 8; pixel_n++) {
+            tile_idx = ppu_read(tile_addr);
+            p_plane_1 = ppu_read(p_table_addr + (tile_idx << 4) + tile_s_y);
+            p_plane_2 = ppu_read(p_table_addr + (tile_idx << 4) + tile_s_y + 8);
+
+            attr_addr = attr_table_addr | (((((tile_y * 8) + tile_s_y) / 32) * (SCREEN_W /32)) + (((tile_x * 8) + tile_s_x) / 32));
+            attr_val = ppu_read(attr_addr);
+            group_idx = (((tile_x % 4) & 0x2) >> 1) + ((tile_y % 4) & 0x2);
+            palette_ub = ((attr_val >> (group_idx << 1)) & 0x3) << 2;
+
+            palette_idx = palette_ub;
+            palette_idx |= p_plane_1 & (0x80 >> tile_s_x) ? 0x1 : 0;
+            palette_idx |= p_plane_2 & (0x80 >> tile_s_x) ? 0x2 : 0;
+
+            if ((palette_idx & 0x3) == 0) {
+                // set transparent pixel renderer
+            } else {
+                // render pixel to the buffer 
+            }
+
+            tile_s_x++;
+
+            if (tile_s_x >= 8) {
+                tile_s_x = 0;
+                tile_addr++;
+                tile_x++;
+                if ((tile_addr & 0x1F) == 0) {
+                    tile_addr--;
+                    tile_x--;
+                    tile_addr &= ~0x001F;
+                    tile_addr ^= 0x0400;
+                }
+            }
+        }
+
+        if ((ppu.vram_addr & 0x001F) == 31) {
+            ppu.vram_addr &= ~0x001F;
+            ppu.vram_addr ^= 0x0400;
+        } else {
+            ppu.vram_addr++;
+        }
+    }
+    
+    if ((ppu.vram_addr & 0x7000) != 0x7000) {
+        ppu.vram_addr += 0x1000;
+    } else {
+        ppu.vram_addr &= 0x0FFF;
+        uint16_t y = (ppu.vram_addr & 0x03E0) >> 5;
+
+        if (y == 29) {
+            y = 0;
+            ppu.vram_addr ^= 0x0800;
+        } else if (y == 31) {
+            y = 0;
+        } else {
+            y++;
+        }
+        ppu.vram_addr = (ppu.vram_addr & ~0x03E0) | (y << 5);
+    }
+}
+
+void update_screen() {
+    // need to somehow check update time perhaps on fpga? make sure that
+    // updating doesn't happend more than 60Hz at a time. If it does
+    // then sleep for a bit (difference between current freq and required)
+    // then continue to update
+    
+    // Update the renderer screen
+    // render_update();
+
+    // clear the screen
+
+    // get the time, this can be used later to calc frequency
 }
