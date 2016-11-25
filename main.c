@@ -6,7 +6,7 @@ void sigint(int a) {
     sig_flag = 1;
 }
 
-int main (int argc, char** argv) {
+int main (int argc, char* argv[]) {
     // Input validation
     if (argc == 1 || argc > 2) {
         debug_print("%s", "Invalid number of arguments!");
@@ -24,7 +24,7 @@ int main (int argc, char** argv) {
     init_game(ROM);
     init_memory();
     init_mmc();
-    init_ppu();
+    ppu_init();
     init_cpu();
 
    
@@ -32,11 +32,13 @@ int main (int argc, char** argv) {
 
     long run_count = 0;
     while(1) {
-        cpu_tick();
-        // if(run_count%50 == 0) {
-        //     static char ch;
-        //     scanf("%c", &ch);
-        // }
+        static int cycles = 0;
+        cycles = cpu_tick();
+        ppu_tick(cycles);
+        //if(run_count%50 == 0) {
+        //   static char ch;
+        //    scanf("%c", &ch);
+        //}
         run_count++;
         // if(get_pc() == 0xC66E) {
         //     break;

@@ -6,7 +6,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include <signal.h>
-
 #include "game.h"
 #include "memory.h"
 #include "ppu.h"
@@ -14,6 +13,8 @@
 #include "mmc.h"
 
 #define debug 1
+#define true 1
+#define false 0
 
 
 #define debug_print(fmt, ...) \

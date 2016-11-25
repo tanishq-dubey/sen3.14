@@ -50,7 +50,7 @@ uint8_t read(uint16_t address) {
     if(address < 0x2000) {
         return memory.sys_ram[address%0x0800];
     } else if (address < 0x4000) {
-        return ppu_read(address); // READ PPU REGISTERS
+        return ppu_read_register(address); // READ PPU REGISTERS
     } else if (address >= 0x6000) {
         return mmc_read(address); // READ MAPPER STUFF!!
     }
@@ -74,9 +74,9 @@ void write(uint16_t address, uint8_t value) {
     if (address < 0x2000) {
         memory.sys_ram[address%0x0800] = value;
     } else if (address < 0x4000) {
-        ppu_write(0x2000 + address%8, value);
+        ppu_write_register(0x2000 + address%8, value);
     } else if (address == 0x4014) {
-        ppu_write(address, value);
+        ppu_write_register(address, value);
     } else if (address >= 0x6000) {
         mmc_write(address, value);
     }

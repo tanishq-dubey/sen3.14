@@ -33,5 +33,6 @@ uint8_t get_prg_banks();
 uint8_t get_chr_banks();
 uint8_t get_mapper();
 void set_mirror_mode(uint8_t value);
+uint8_t get_mirror_mode();
 
 #endif /* GAME_C */

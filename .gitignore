@@ -33,3 +33,7 @@ nes
 
 # ROM files
 *.nes
+
+#temp additions
+ppu.c
+ppu.h
