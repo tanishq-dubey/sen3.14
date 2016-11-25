@@ -44,3 +44,10 @@ uint8_t mmc_read(uint16_t address) {
     }
     return 0;
 }
+
+uint8_t mmc_mapper() {
+    switch(get_mapper()) {
+        case 0:
+            return 
+    }
+}

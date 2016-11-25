@@ -31,6 +31,8 @@ uint16_t read_short(uint16_t address);
 uint16_t read_short_bad(uint16_t address);
 void write(uint16_t address, uint8_t value);
 
+uint8_t get_mirror_mode_memory();
+
 uint8_t* get_prg_mem();
 uint8_t* get_chr_mem();
 uint8_t* get_sys_ram();

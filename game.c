@@ -21,6 +21,17 @@ void init_game(uint8_t* rom) {
     for(i = 0; i < 8; i++){
         debug_print("0x%02X \n", gamepack.rom_data[i]);
     }
+
+    if (!(gamepack.flags_six & 0x1)) {
+        gamepack.mirror_mode = Horizontal;
+    } else if (gamepack.flags_six & 0x1) {
+        gamepack.mirror_mode = Vertical;
+    } else if (gamepack.flags_six & 0x8) {
+        gamepack.mirror_mode = FourScreen;
+    } else {
+        gamepack.mirror_mode = SingleScreen;
+    }
+
     debug_print("PRG ROM Size: 0x%02X\n", gamepack.prg_rom_size);
     debug_print("PRG ROM Bank: 0x%02X\n", gamepack.prg_rom_banks);
     debug_print("CHR ROM Size: 0x%02X\n", gamepack.chr_rom_size);

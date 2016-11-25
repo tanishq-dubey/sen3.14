@@ -44,18 +44,11 @@ uint8_t attributeTable;
 uint8_t lowByte;
 uint8_t highByte;
 
-enum {
-    horizontal,
-    vertical,
-    single_screen,
-    four_screen
-} mirroring;
-
 void init_ppu();
 void reset_ppu();
 void ppu_write(uint16_t address, uint8_t value);
 uint8_t ppu_read(uint16_t address);
-void normalize_address(uint16_t address);
+uint16_t normalize_address(uint16_t address);
 uint16_t mirror_nameTable(uint16_t address);
 
 //getting all the read write info on https://wiki.nesdev.com/w/index.php/PPU_registers#OAMADDR

@@ -2,6 +2,7 @@
 #define GAME_C
 
 #include "main.h"
+#include "memory.h"
 
 typedef struct game {
     uint32_t prg_rom_size;
@@ -14,6 +15,15 @@ typedef struct game {
     uint8_t mapper_mode;
     uint8_t mirror_mode;
 } game;
+
+enum { 
+    Horizontal,
+    Vertical,
+    SingleScreen,
+    SingleScreenLowerBank,
+    SingleScreenUpperBank,
+    FourScreen
+} mirroring;
 
 static struct game gamepack;
 

@@ -97,58 +97,41 @@ uint8_t ppu_read(uint16_t address)
 	return PPU_VRAM_MEMORY[normalize_address(address)];
 }
 
-void ppu_write(uint16_t address, uint8_t value)
-{
-	if(address < 0x2000)
-	{
-		memory.get_chr_mem()[address] = value;
-	}
-	else if(address == 0x2000) {
-		write_CTRL(value);
-	}
-	else if(address == 0x2001) {
-		write_MASK(value);
-	}
-	else if (address == 0x2003) {
+void ppu_write(uint16_t address, uint8_t value) {
+    if(address < 0x2000) {
+        get_chr_mem()[address] = value;
+    } else if(address == 0x2000) {
+        write_CTRL(value);
+    } else if(address == 0x2001) {
+        write_MASK(value);
+    } else if (address == 0x2003) {
         write_OAMADDR(value);
-    } 
-    else if (address == 0x2004) {
+    } else if (address == 0x2004) {
         write_OAMDATA(value);
-    } 
-    else if (address == 0x2005) {         
+    } else if (address == 0x2005) {         
     	write_SCROLL(value);
-    } 
-    else if (address == 0x2006) {
+    } else if (address == 0x2006) {
         write_VRAMADDR(value);
-    } 
-    else if (address == 0x2007) {
+    } else if (address == 0x2007) {
         write_VRAMDATA(value);
     } else if (address == 0x4014) {
     	write_OAMDMA(value);
-    }
-    else
-    {
+    } else {
     	PPU_VRAM_MEMORY[normalize_address(address)] = value;
     }
 }
 
-uint8_t read(uint16_t address)
-{
-	if(address < 0x2000)
-	{
-		return get_chr_mem()[address];
+uint8_t read(uint16_t address) {
+	if(address < 0x2000) {
+            return get_chr_mem()[address];
 	}
 	return PPU_VRAM_MEMORY[normalize_address(address)];
 }
 
-void write(uint16_t address, uint8_t value)
-{
-	if(address < 0x2000)
-	{
-		memory.get_chr_mem()[address] = value;
-	}
-    else
-    {
+void write(uint16_t address, uint8_t value) {
+    if(address < 0x2000) {
+        get_chr_mem()[address] = value;
+    } else {
     	PPU_VRAM_MEMORY[normalize_address(address)] = value;
     }
 }
@@ -164,7 +147,7 @@ void reset_ppu()
 	ppu_cycles = 0;
 }
 
-void normalize_address(uint16_t address)
+uint16_t normalize_address(uint16_t address)
 {
 	address &= 0x3FFF; //any address above 0x3FFF wraps around
 	address = mirror_nameTable(address);
@@ -177,38 +160,40 @@ void normalize_address(uint16_t address)
 	//addresses 0x3F20 to 0x3FFF are all mirrors of 0x3F00 to 0x3F1F
 	if(address >= 0x3F20 && address <= 0x3F3F)
 	{
-		address -= 0x020;
+		return address -= 0x020;
 	}
 	else if(address >= 0x3F40 && address <= 0x3F5F)
 	{
-		address -= 0x040;
+		return address -= 0x040;
 	}
 	else if(address >= 0x3F60 && address <= 0x3F7F)
 	{
-		address -= 0x060;
+		return address -= 0x060;
 	}
 	else if(address >= 0x3F80 && address <= 0x3F9F)
 	{
-		address -= 0x080;
+		return address -= 0x080;
 	}
 	else if(address >= 0x3FA0 && address <= 0x3FBF)
 	{
-		address -= 0x0A0;
+		return address -= 0x0A0;
 	}
 	else if(address >= 0x3FC0 && address <= 0x3FDF)
 	{
-		address -= 0x0C0;
+		return address -= 0x0C0;
 	}
 	else if(address >= 0x3FE0 && address <= 0x3FFF)
 	{
-		address -= 0x0E0;
+		return address -= 0x0E0;
 	}
 
 	//for img and sprite palette
 	if(address == 0x3F04 || address == 0x3F08 || address == 0x3F0C || address == 0x3F10 || address == 0x3F14 || address == 0x3F18 || address == 0x3F1C)
 	{
-		address = 0x3F00;
+		return address = 0x3F00;
 	}
+        debug_print("Uncaught memory location: 0x%02x", address);
+        return 0;
 }
 
 uint16_t mirror_nameTable(uint16_t address)
